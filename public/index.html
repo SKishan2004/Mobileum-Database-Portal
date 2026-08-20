@@ -675,6 +675,16 @@ function switchTab(tabId, el) {
   if (tabId === 'history-tab') renderHistoryTab();
 }
 
+function openUploadModal() {
+  $('uploadModal').style.display = 'flex';
+  $('uploadPreview').style.display = 'none';
+  $('btnUploadSubmit').disabled = true;
+  $('fileInput').value = '';
+  pendingUploadBase64 = null;
+  pendingUploadRows = [];
+  pendingFileName = "";
+}
+
 function openExportModal() {
   $('exportModal').style.display = 'flex';
 }
@@ -779,11 +789,12 @@ function handleFileSelect(e) {
     const sheet = workbook.Sheets[sheetName];
     pendingUploadRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
 
-    // Prepare Base64 payload
+    // Prepare Base64 payload safely in 8KB chunks
     const bytes = new Uint8Array(arrayBuffer);
     let binary = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]);
+    const chunkSize = 8192;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
     }
     pendingUploadBase64 = btoa(binary);
 

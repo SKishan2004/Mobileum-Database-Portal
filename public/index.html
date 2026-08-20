@@ -816,7 +816,7 @@ async function submitDatasetUpload() {
     const res = await fetch('/api/upload', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fileData: pendingUploadBase64, filename, primaryKey })
+      body: JSON.stringify({ fileData: pendingUploadBase64, parsedRows: pendingUploadRows, filename, primaryKey })
     });
 
     const result = await res.json();

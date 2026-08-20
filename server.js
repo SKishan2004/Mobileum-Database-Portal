@@ -491,16 +491,16 @@ app.post("/api/dataset/clear", async (req, res) => {
 // Endpoint to upload a new Excel or CSV file
 app.post("/api/upload", async (req, res) => {
   try {
-    const { fileData, filename, primaryKey } = req.body;
-    if (!fileData) {
-      return res.status(400).json({ success: false, message: "File data (base64) is required" });
+    let rows = [];
+    if (Array.isArray(req.body.parsedRows) && req.body.parsedRows.length > 0) {
+      rows = req.body.parsedRows;
+    } else if (fileData) {
+      const buffer = Buffer.from(fileData, "base64");
+      const workbook = XLSX.read(buffer, { cellDates: true, raw: false });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
     }
-
-    const buffer = Buffer.from(fileData, "base64");
-    const workbook = XLSX.read(buffer, { cellDates: true, raw: false });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
     if (!rows || rows.length === 0) {
       return res.status(400).json({ success: false, message: "Uploaded file contains no data rows" });

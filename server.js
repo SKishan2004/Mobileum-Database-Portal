@@ -491,9 +491,11 @@ app.post("/api/dataset/clear", async (req, res) => {
 // Endpoint to upload a new Excel or CSV file
 app.post("/api/upload", async (req, res) => {
   try {
+    const { fileData, filename, primaryKey, parsedRows } = req.body;
     let rows = [];
-    if (Array.isArray(req.body.parsedRows) && req.body.parsedRows.length > 0) {
-      rows = req.body.parsedRows;
+
+    if (Array.isArray(parsedRows) && parsedRows.length > 0) {
+      rows = parsedRows;
     } else if (fileData) {
       const buffer = Buffer.from(fileData, "base64");
       const workbook = XLSX.read(buffer, { cellDates: true, raw: false });

@@ -1,0 +1,1805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mobileum Database Portal</title>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Chart.js, SheetJS & jsPDF -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+<style>
+  :root {
+    /* Soft Warm Light Theme */
+    --bg-main: #fcfbf8;
+    --card-bg: #f6f4ed;
+    --border-color: #d8d4c7;
+    --text-main: #475569;
+    --text-muted: #64748b;
+    --primary: #1e293b;
+    --accent: #3b82f6;
+    
+    --success: #65a30d;
+    --success-bg: #ecfccb;
+    --warning: #d97706;
+    --warning-bg: #fef3c7;
+    --danger: #dc2626;
+    --danger-bg: #fee2e2;
+    --info: #0284c7;
+    --info-bg: #e0f2fe;
+    
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+    --radius-md: 4px;
+    --radius-lg: 8px;
+  }
+
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 1000; }
+  .modal-card { background: #ffffff; width: 92%; max-width: 760px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; overflow: hidden; max-height: 88vh; display: flex; flex-direction: column; }
+  .modal-header { padding: 18px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; }
+  .modal-title { font-size: 16px; font-weight: 700; color: #0f172a; }
+  .modal-close { background: transparent; border: none; font-size: 22px; cursor: pointer; color: #64748b; line-height: 1; transition: color 0.2s; margin-top: 0; height: auto; padding: 4px; }
+  .modal-close:hover { color: #ef4444; background: transparent; }
+  .modal-body { padding: 24px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; background: #ffffff; }
+
+  .dynamic-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    max-height: 52vh;
+    overflow-y: auto;
+    padding-right: 6px;
+  }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; position: relative; }
+  .form-group label { font-size: 12px; font-weight: 600; color: #334155; }
+  .form-group input, .form-group select {
+    width: 100%; height: 38px; border: 1px solid #cbd5e1; border-radius: 6px;
+    padding: 0 12px; font-size: 13px; background: #ffffff; color: #0f172a;
+    transition: all 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus {
+    outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); background: #ffffff;
+  }
+
+  .form-actions {
+    display: flex; justify-content: flex-end; align-items: center; gap: 12px;
+    margin-top: 20px; padding-top: 16px; border-top: 1px solid #e2e8f0; width: 100%;
+  }
+
+  .btn-sm {
+    height: 38px; padding: 0 18px; font-size: 13px; font-weight: 600;
+    border-radius: 6px; display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s; margin-top: 0; text-decoration: none;
+  }
+  .btn-save { background: #2563eb; color: #ffffff; border: none; }
+  .btn-save:hover { background: #1d4ed8; }
+  .btn-cancel { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+  .btn-cancel:hover { background: #e2e8f0; color: #1e293b; }
+
+  .choice-card { background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 32px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; cursor: pointer; transition: all 0.2s; }
+  .choice-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .choice-icon { font-size: 32px; }
+  .choice-title { font-size: 14px; font-weight: 700; color: var(--primary); }
+  .choice-desc { font-size: 11px; color: var(--text-muted); }
+
+  .suggestions-box { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1px solid var(--border-color); border-radius: 4px; max-height: 200px; overflow-y: auto; z-index: 10; display: none; box-shadow: var(--shadow-md); }
+  .suggestion-item { padding: 8px 12px; font-size: 11px; cursor: pointer; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; }
+  .suggestion-item:last-child { border-bottom: none; }
+  .suggestion-item:hover { background: var(--info-bg); }
+  .suggestion-opp { font-weight: 600; color: var(--primary); }
+  .suggestion-detail { color: var(--text-muted); font-size: 10px; }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    color: var(--text-main);
+    background: var(--bg-main);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app-container { display: flex; flex-direction: column; min-height: 100vh; }
+
+  .header {
+    background: #0f172a;
+    border-bottom: 1px solid #1e293b;
+    padding: 18px 32px 0 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+  
+  .header-top { display: flex; justify-content: space-between; align-items: center; }
+
+  .header-left .title { font-size: 20px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; }
+  .header-left .subtitle { font-size: 12px; color: #94a3b8; margin-top: 3px; font-weight: 500; }
+
+  .tabs {
+    display: flex;
+    gap: 28px;
+  }
+  
+  .tab {
+    padding: 10px 4px 14px 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #94a3b8;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+  }
+  
+  .tab:hover { color: #f8fafc; }
+  .tab.active { color: #38bdf8; border-bottom-color: #38bdf8; }
+
+  .header .btn-save { background: #2563eb; color: #ffffff; border: none; font-weight: 600; }
+  .header .btn-save:hover { background: #1d4ed8; }
+  .header .btn-export { background: #059669; color: #ffffff; border: none; font-weight: 600; }
+  .header .btn-export:hover { background: #047857; }
+  .header .btn-clear { background: transparent; border: 1px solid #ef4444; color: #f87171; font-weight: 600; }
+  .header .btn-clear:hover { background: rgba(239, 68, 68, 0.15); }
+  .header .btn-log { background: #1e293b; border: 1px solid #334155; color: #cbd5e1; font-weight: 600; }
+  .header .btn-log:hover { background: #334155; color: #ffffff; }
+
+  .main-content { padding: 24px 32px; flex: 1; display: flex; flex-direction: column; gap: 24px; }
+
+  .tab-content { display: none; flex-direction: column; gap: 24px; }
+  .tab-content.active { display: flex; }
+
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .card-title { font-size: 14px; font-weight: 600; color: var(--primary); text-transform: uppercase; }
+  .card-note { font-size: 11px; color: var(--text-muted); }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+
+  .kpi-card {
+    padding: 20px; display: flex; flex-direction: column; gap: 8px;
+    border-top: 4px solid var(--accent); border-left: none;
+    background: var(--card-bg); transition: transform 0.2s, border-color 0.2s; position: relative;
+    cursor: pointer;
+  }
+  .kpi-card:hover { transform: translateY(-4px); }
+
+  .kpi-card.c0 { border-top-color: var(--accent); }
+  .kpi-card.c1 { border-top-color: var(--danger); }
+  .kpi-card.c2 { border-top-color: var(--warning); }
+  .kpi-card.c3 { border-top-color: var(--info); }
+  .kpi-card.c4 { border-top-color: var(--success); }
+  .kpi-card.c5 { border-top-color: #6c71c4; }
+
+  .kpi-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .kpi-value { font-size: 26px; font-weight: 700; color: var(--primary); line-height: 1.2; word-break: break-word; }
+  .kpi-sub { font-size: 11px; color: var(--text-muted); }
+
+  .charts-grid { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 24px; }
+  .chart-container { padding: 20px; height: 300px; position: relative; }
+
+  .filters-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) 100px; gap: 16px;
+    padding: 20px; background: var(--bg-main); border-bottom: 1px solid var(--border-color);
+  }
+
+  .filter-group { display: flex; flex-direction: column; gap: 6px; }
+  .filter-group label { font-size: 11px; font-weight: 600; color: var(--text-main); }
+
+  select, input, button {
+    height: 36px; border: 1px solid var(--border-color); border-radius: var(--radius-md);
+    padding: 0 12px; font-family: inherit; font-size: 13px; background: var(--card-bg); color: var(--primary);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  select:focus, input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(38, 139, 210, 0.2); }
+
+  button { background: var(--accent); color: #fdf6e3; border: none; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-top: auto; }
+  button:hover { background: #2aa198; }
+  button.btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
+  button.btn-outline:hover { background: var(--bg-main); }
+
+  .table-container { overflow-x: auto; max-width: 100%; }
+  table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+  th { background: #eee8d5; padding: 10px 14px; font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; border-bottom: 2px solid var(--border-color); cursor: pointer; user-select: none; }
+  th:hover { background: #e0d8c0; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border-color); font-size: 11px; max-width: 250px; overflow: hidden; text-overflow: ellipsis; }
+  tbody tr { transition: background-color 0.15s; }
+  tbody tr:hover { background-color: #fdf6e3; }
+
+  .badge { display: inline-flex; align-items: center; padding: 4px 8px; border-radius: var(--radius-md); font-size: 11px; font-weight: 600; line-height: 1; white-space: nowrap; background: transparent; border: 1px solid var(--border-color); color: var(--primary); }
+  .money { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+  
+  .region-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; padding: 20px; }
+  .region-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+  .region-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--accent); }
+  .region-card-title { font-size: 15px; font-weight: 700; color: var(--primary); margin-bottom: 12px; }
+  .region-card-stat { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; }
+  .region-card-stat span:last-child { font-weight: 600; color: var(--primary); }
+
+  .empty-state { padding: 48px; text-align: center; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
+  .footer { padding: 16px 32px; text-align: center; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border-color); background: var(--card-bg); }
+
+  @media (max-width: 1024px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } .charts-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 768px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } .filters-grid { grid-template-columns: 1fr 1fr; } }
+
+  /* Contacts Section */
+  .contacts-section { padding: 24px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); margin-top: 24px; }
+  .contacts-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+  .contacts-title { font-size: 14px; font-weight: 700; color: var(--primary); text-transform: uppercase; }
+  .contacts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+  .contact-card { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* Table Row Hover Edit */
+  tbody tr { position: relative; }
+  .row-action-btn { 
+    opacity: 0; transition: opacity 0.2s; background: transparent; border: none; color: var(--accent); cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
+  }
+  tbody tr:hover .row-action-btn { opacity: 1; }
+  .row-action-btn:hover { background: var(--info-bg); }
+
+  /* Toast Notifications */
+  .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; pointer-events: none; }
+  .toast { background: white; border-left: 4px solid var(--accent); box-shadow: var(--shadow-md); padding: 16px 20px; border-radius: var(--radius-md); font-size: 13px; color: var(--primary); display: flex; align-items: center; gap: 12px; pointer-events: auto; animation: slideIn 0.3s ease forwards; width: 300px; border: 1px solid var(--border-color); border-left: 4px solid var(--accent); }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .toast.fade-out { animation: fadeOut 0.3s ease forwards; }
+  @keyframes fadeOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+
+  mark.search-highlight { background: #fef08a; color: #854d0e; padding: 2px 4px; border-radius: 2px; font-weight: 600; }
+  
+  /* Activity Log Panel */
+  .log-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); display: none; z-index: 1000; }
+  .log-panel { position: fixed; top: 0; right: -400px; width: 400px; max-width: 100vw; height: 100vh; background: var(--bg-main); box-shadow: -4px 0 15px rgba(0,0,0,0.1); transition: right 0.3s ease; z-index: 1001; display: flex; flex-direction: column; }
+  .log-panel.open { right: 0; }
+  .log-header { padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); }
+  .log-body { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+  .log-day-group { display: flex; flex-direction: column; gap: 12px; }
+  .log-day-header { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; }
+  .log-item { display: flex; flex-direction: column; gap: 4px; padding: 12px; background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); transition: background 0.2s; }
+  .log-item.has-changes { cursor: pointer; }
+  .log-item.has-changes:hover { background: #f8fafc; }
+  .log-item-title { font-size: 13px; font-weight: 600; color: var(--primary); }
+  .log-item-time { font-size: 10px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; }
+  .log-item.added { border-left: 3px solid var(--success); }
+  .log-item.updated { border-left: 3px solid var(--accent); }
+  .log-changes { display: none; margin-top: 8px; font-size: 11px; background: var(--bg-main); padding: 10px; border-radius: 4px; border: 1px solid var(--border-color); }
+  .log-item.expanded .log-changes { display: block; }
+  .change-row { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+  .change-row:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
+  .change-field { font-weight: 600; color: var(--primary); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .change-values { display: flex; flex-direction: column; gap: 2px; }
+  .change-old { color: var(--danger); text-decoration: line-through; }
+  .change-new { color: var(--success); font-weight: 500; }
+  .expand-icon { transition: transform 0.2s; }
+  .log-item.expanded .expand-icon { transform: rotate(180deg); }
+</style>
+</head>
+<body>
+
+<!-- Upload Dataset Modal -->
+<div id="uploadModal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-title">Upload Telecom Dataset</div>
+      <button class="modal-close" onclick="closeUploadModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <p style="font-size:12px; color:var(--text-muted);">
+          Select an Excel (.xlsx, .xls) or CSV file with your telecom dataset. The system will automatically infer column headers, data types, and let you confirm the Primary Key column.
+        </p>
+        
+        <div style="border:2px dashed var(--border-color); border-radius:var(--radius-lg); padding:32px; text-align:center; background:#fff; cursor:pointer;" onclick="document.getElementById('fileInput').click()">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="margin-bottom:8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          <div style="font-weight:600; color:var(--primary); font-size:14px;">Click to Choose File</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Supports .xlsx, .xls, .csv files</div>
+          <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" style="display:none;" onchange="handleFileSelect(event)">
+        </div>
+
+        <div id="uploadPreview" style="display:none; flex-direction:column; gap:16px; background:#fff; padding:16px; border:1px solid var(--border-color); border-radius:var(--radius-md);">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-weight:700; color:var(--primary);" id="previewFileName">filename.xlsx</div>
+            <div style="font-size:11px; color:var(--text-muted);" id="previewRowCount">0 rows detected</div>
+          </div>
+          
+          <div class="form-group">
+            <label style="font-size:11px; font-weight:700; color:var(--primary);">Select Primary / Unique Key Column *</label>
+            <select id="primaryKeySelect" style="width:100%;"></select>
+          </div>
+
+          <div style="font-size:11px; font-weight:700; color:var(--primary);">Inferred Schema Preview:</div>
+          <div id="schemaList" style="max-height:160px; overflow-y:auto; border:1px solid var(--border-color); border-radius:4px; padding:8px; display:flex; flex-wrap:wrap; gap:6px;"></div>
+        </div>
+
+        <div class="form-actions" style="margin-top:8px; display:flex; justify-content:space-between; align-items:center; width:100%;">
+          <button class="btn-sm btn-outline" style="border-color:var(--danger); color:var(--danger);" onclick="confirmClearDataset()">Clear Existing Dataset</button>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-sm btn-cancel" onclick="closeUploadModal()">Cancel</button>
+            <button class="btn-sm btn-save" id="btnUploadSubmit" disabled onclick="submitDatasetUpload()">Import Dataset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Opportunity Add/Edit Modal -->
+<div id="oppModal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-title" id="oppModalTitle">Record Management</div>
+      <button class="modal-close" onclick="document.getElementById('oppModal').style.display='none'">&times;</button>
+    </div>
+    
+    <!-- Choice State -->
+    <div class="modal-body" id="oppModalChoice">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div class="choice-card" onclick="setOppMode('add')">
+          <div class="choice-icon" style="color:var(--accent);"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></div>
+          <div class="choice-title">Add New Record</div>
+          <div class="choice-desc">Create a brand new record from scratch.</div>
+        </div>
+        <div class="choice-card" onclick="setOppMode('edit')">
+          <div class="choice-icon" style="color:var(--accent);"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></div>
+          <div class="choice-title">Update Existing Record</div>
+          <div class="choice-desc">Search and modify an existing record.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form State -->
+    <div class="modal-body" id="oppModalForm" style="display: none;">
+      <button type="button" class="btn-cancel btn-sm" style="align-self: flex-start; border:none; padding:0; background:transparent; color:var(--accent); cursor:pointer; height:auto; margin-bottom: 4px;" onclick="showOppChoices()">← Back to options</button>
+      
+      <form id="oppForm" onsubmit="submitOpp(event)" style="display:flex; flex-direction:column;">
+        <div id="dynamicFormFields" class="dynamic-form-grid"></div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-sm btn-cancel" onclick="document.getElementById('oppModal').style.display='none'">Cancel</button>
+          <button type="submit" class="btn-sm btn-save">Save Record</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Export Report Modal -->
+<div id="exportModal" class="modal-overlay">
+  <div class="modal-card" style="max-width: 540px;">
+    <div class="modal-header">
+      <div class="modal-title">Export Report</div>
+      <button class="modal-close" onclick="closeExportModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px; color:var(--text-muted);">
+        Export your dataset with all active database edits, updates, and applied filters included.
+      </p>
+
+      <div class="form-group">
+        <label style="font-size:12px; font-weight:700; color:var(--primary);">Select Data Scope *</label>
+        <select id="exportScopeSelect" style="width:100%;">
+          <option value="filtered">Currently Filtered View (Active Filters/Search)</option>
+          <option value="all">All Records (Full Active Dataset)</option>
+        </select>
+      </div>
+
+      <div style="font-size:12px; font-weight:700; color:var(--primary); margin-top:4px;">Choose Export Format *</div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="choice-card" style="padding:20px;" onclick="triggerExport('excel')">
+          <div class="choice-icon" style="color:#16a34a;">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line></svg>
+          </div>
+          <div class="choice-title" style="font-size:13px;">Excel (.xlsx)</div>
+          <div class="choice-desc">Formatted spreadsheet dataset</div>
+        </div>
+
+        <div class="choice-card" style="padding:20px;" onclick="triggerExport('pdf')">
+          <div class="choice-icon" style="color:#dc2626;">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+          </div>
+          <div class="choice-title" style="font-size:13px;">PDF (.pdf)</div>
+          <div class="choice-desc">Print-ready PDF report document</div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-sm btn-cancel" onclick="closeExportModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app-container">
+  
+  <!-- Activity Log Panel -->
+  <div id="logOverlay" class="log-overlay" onclick="closeLogPanel()"></div>
+  <div id="logPanel" class="log-panel">
+    <div class="log-header">
+      <div class="modal-title">Activity Log</div>
+      <button class="modal-close" onclick="closeLogPanel()">&times;</button>
+    </div>
+    <div class="log-body" id="logBody">
+      <div style="text-align: center; color: var(--text-muted); padding: 20px;">Loading logs...</div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-top">
+      <div class="header-left">
+        <h1 class="title">MOBILEUM DATABASE PORTAL</h1>
+        <div class="subtitle" id="datasetSourceSubtitle">Source: Local Excel File</div>
+      </div>
+      <div class="header-right" style="display:flex; gap:12px; align-items:center;">
+        <button class="btn-sm btn-save" onclick="openUploadModal()" style="display:flex; align-items:center; gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          Upload Dataset
+        </button>
+        <button class="btn-sm btn-export" onclick="openExportModal()" style="display:flex; align-items:center; gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Export Report
+        </button>
+        <button class="btn-sm btn-clear" onclick="confirmClearDataset()" style="display:flex; align-items:center; gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          Clear Dataset
+        </button>
+        <button class="btn-sm btn-log" onclick="openLogPanel()" style="display:flex; align-items:center; gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          Activity Log
+        </button>
+      </div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('dashboard', this)">Dashboard Overview</div>
+      <div class="tab" onclick="switchTab('details', this)">Record Details</div>
+      <div class="tab" onclick="switchTab('region-summary', this)">Grouped Summary</div>
+      <div class="tab" onclick="switchTab('contacts-tab', this)">Customer Contacts</div>
+      <div class="tab" onclick="switchTab('search-tab', this)">Search</div>
+      <div class="tab" onclick="switchTab('history-tab', this)">Dataset History</div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- Dashboard Tab -->
+    <div id="dashboard" class="tab-content active">
+      <div class="kpi-grid" id="kpiGrid"></div>
+
+      <div class="charts-grid">
+        <div class="card" style="display:flex; flex-direction:column;">
+          <div class="card-header">
+            <div class="card-title">Category Distribution</div>
+            <select id="doughnutCategorySelect" style="height:28px; font-size:11px; padding:0 6px;" onchange="renderCharts()"></select>
+          </div>
+          <div style="padding:16px; display:flex; flex-direction:column; gap:16px; flex:1;">
+            <div class="chart-container" style="height:200px; padding:0;">
+              <canvas id="doughnutChart"></canvas>
+            </div>
+            <div id="doughnutLegend" style="max-height:140px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding-top:12px; border-top:1px solid var(--border-color);"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Metrics by Category</div>
+            <div style="display:flex; gap:8px;">
+              <select id="barCategorySelect" style="height:28px; font-size:11px; padding:0 6px;" onchange="renderCharts()"></select>
+              <select id="barMetricSelect" style="height:28px; font-size:11px; padding:0 6px;" onchange="renderCharts()"></select>
+            </div>
+          </div>
+          <div class="chart-container"><canvas id="barChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Records by Breakdown</div>
+            <select id="regionCategorySelect" style="height:28px; font-size:11px; padding:0 6px;" onchange="renderCharts()"></select>
+          </div>
+          <div class="chart-container"><canvas id="regionChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Details Tab -->
+    <div id="details" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Record Details</div>
+          <div style="display: flex; gap: 16px; align-items: center;">
+            <button class="btn-sm btn-save" onclick="openOppModal()" style="display:flex; align-items:center; gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+              Add / Edit Record
+            </button>
+            <div class="card-note" id="rowCount">0 records</div>
+          </div>
+        </div>
+
+        <div class="filters-grid" id="filtersGrid"></div>
+
+        <div class="table-container">
+          <table>
+            <thead id="thead"></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+          <div class="empty-state" id="empty" style="display:none"><div>No records match the selected filters.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grouped Summary Tab -->
+    <div id="region-summary" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Grouped Summary</div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <label style="font-size:11px; font-weight:600; color:var(--text-muted);">Group By:</label>
+            <select id="groupedSummarySelect" style="height:32px; font-size:12px; padding:0 8px;" onchange="renderGroupedSummary()"></select>
+          </div>
+        </div>
+        <div class="region-grid" id="regionGrid"></div>
+      </div>
+    </div>
+
+    <!-- Customer Contacts Tab -->
+    <div id="contacts-tab" class="tab-content">
+      <div class="contacts-section" style="margin-top: 0;">
+        <div class="contacts-header">
+          <div class="contacts-title">Customer Contacts</div>
+        </div>
+        <div class="contacts-grid" id="contactsGrid"></div>
+      </div>
+    </div>
+
+    <!-- Global Search Tab -->
+    <div id="search-tab" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Global Search</div>
+          <div class="card-note" id="searchResultNote">Type to search across all fields of active dataset</div>
+        </div>
+        <div style="padding:20px; background:var(--bg-main); border-bottom:1px solid var(--border-color); display:flex; gap:12px; align-items:center;">
+          <div style="flex:1; position:relative;">
+            <input id="tabSearchInput" placeholder="Type keywords to search all records across any column..." style="width:100%; height:42px; font-size:14px; padding-left:38px;" oninput="debouncedTabSearch(event)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="position:absolute; left:12px; top:12px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </div>
+          <button class="btn-outline" onclick="clearTabSearch()" style="height:42px;">Clear Search</button>
+        </div>
+
+        <div id="searchBanner" style="display:none; padding:10px 20px; font-size:12px; font-weight:600; background:var(--info-bg); color:var(--info); border-bottom:1px solid var(--border-color);"></div>
+
+        <div class="table-container">
+          <table>
+            <thead id="searchThead"></thead>
+            <tbody id="searchTbody"></tbody>
+          </table>
+          <div class="empty-state" id="searchEmpty" style="display:none"><div>Type a keyword above to search across all columns of the dataset.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dataset History Tab -->
+    <div id="history-tab" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Dataset History & Versions</div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-sm btn-save" onclick="openUploadModal()" style="display:flex; align-items:center; gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              Upload New Dataset
+            </button>
+          </div>
+        </div>
+        <div style="padding:20px;">
+          <div class="region-grid" id="historyGrid" style="padding:0;"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+let activeSchema = { primaryKey: "Opportunity Name", columns: [] };
+let allRows = [];
+let rows = [];
+let sortColumn = null;
+let sortDirection = 1;
+let filterValues = {};
+
+let pendingUploadBase64 = null;
+let pendingUploadRows = [];
+
+let barChartInstance = null;
+let doughnutChartInstance = null;
+let regionChartInstance = null;
+
+const $ = id => document.getElementById(id);
+const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({"&": "&amp;","<": "&lt;",">": "&gt;",'"': "&quot;","'": "&#39;"}[ch]));
+const money = value => Number(value || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const moneyShort = value => {
+  const num = Number(value || 0);
+  if (Math.abs(num) >= 1000000) return (num / 1000000).toFixed(2) + "M";
+  if (Math.abs(num) >= 1000) return (num / 1000).toFixed(1) + "K";
+  return num.toFixed(2);
+};
+
+let pendingFileName = "";
+
+// Tab Switching
+function switchTab(tabId, el) {
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  $(tabId).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  else {
+    const tabs = document.querySelectorAll('.tab');
+    if (tabId === 'dashboard' && tabs[0]) tabs[0].classList.add('active');
+    if (tabId === 'details' && tabs[1]) tabs[1].classList.add('active');
+    if (tabId === 'region-summary' && tabs[2]) tabs[2].classList.add('active');
+    if (tabId === 'contacts-tab' && tabs[3]) tabs[3].classList.add('active');
+    if (tabId === 'search-tab' && tabs[4]) tabs[4].classList.add('active');
+    if (tabId === 'history-tab' && tabs[5]) tabs[5].classList.add('active');
+  }
+
+  if (tabId === 'search-tab') renderSearchTab();
+  if (tabId === 'history-tab') renderHistoryTab();
+}
+
+function openExportModal() {
+  $('exportModal').style.display = 'flex';
+}
+
+function closeExportModal() {
+  $('exportModal').style.display = 'none';
+}
+
+async function triggerExport(format) {
+  const scope = $('exportScopeSelect').value;
+  const targetData = scope === 'filtered' ? rows : allRows;
+
+  if (!targetData || targetData.length === 0) {
+    alert("No records available to export for the selected scope.");
+    return;
+  }
+
+  const dateStr = new Date().toISOString().split('T')[0];
+  const activeName = "Renewal_Report";
+
+  if (format === 'excel') {
+    const cols = activeSchema.columns.map(c => c.column_name);
+    const exportRows = targetData.map(r => {
+      const rowObj = {};
+      cols.forEach(col => {
+        let val = r[col] ?? '';
+        if (val instanceof Date) val = val.toISOString().split('T')[0];
+        rowObj[col] = val;
+      });
+      return rowObj;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(exportRows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Report Data");
+
+    const fileName = `${activeName}_${scope}_${dateStr}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+
+    closeExportModal();
+    showToast(`Exported ${exportRows.length} records to Excel (${fileName})`, 'success');
+  } else if (format === 'pdf') {
+    try {
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        throw new Error("jsPDF library not loaded.");
+      }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+
+      doc.setFontSize(16);
+      doc.setTextColor(30, 41, 59);
+      doc.text("RENEWAL MANAGEMENT REPORT", 40, 40);
+
+      doc.setFontSize(10);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Generated: ${new Date().toLocaleString()}  |  Scope: ${scope === 'filtered' ? 'Filtered View' : 'All Records'} (${targetData.length} records)`, 40, 56);
+
+      const cols = activeSchema.columns.slice(0, 8);
+      const headers = cols.map(c => c.column_name);
+      const dataRows = targetData.map(r => cols.map(c => {
+        let val = r[c.column_name] ?? '—';
+        if (val instanceof Date) val = val.toISOString().split('T')[0];
+        return String(val);
+      }));
+
+      doc.autoTable({
+        head: [headers],
+        body: dataRows,
+        startY: 70,
+        styles: { fontSize: 8, cellPadding: 5 },
+        headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { left: 40, right: 40 }
+      });
+
+      const fileName = `${activeName}_${scope}_${dateStr}.pdf`;
+      doc.save(fileName);
+
+      closeExportModal();
+      showToast(`Exported ${targetData.length} records to PDF (${fileName})`, 'success');
+    } catch (pdfErr) {
+      console.error("PDF Export Error:", pdfErr);
+      alert("Failed to export PDF: " + pdfErr.message);
+    }
+  }
+}
+
+function closeUploadModal() {
+  $('uploadModal').style.display = 'none';
+}
+
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  pendingFileName = file.name;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    const arrayBuffer = evt.target.result;
+    const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    pendingUploadRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+    // Prepare Base64 payload
+    const bytes = new Uint8Array(arrayBuffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    pendingUploadBase64 = btoa(binary);
+
+    // Populate preview UI
+    $('previewFileName').textContent = file.name;
+    $('previewRowCount').textContent = `${pendingUploadRows.length} rows detected`;
+
+    const cols = Object.keys(pendingUploadRows[0] || {});
+    const pkSelect = $('primaryKeySelect');
+    pkSelect.innerHTML = cols.map(c => `<option value="${esc(c.trim())}">${esc(c.trim())}</option>`).join('');
+
+    // Inferred tags
+    $('schemaList').innerHTML = cols.map(c => `<span class="badge">${esc(c.trim())}</span>`).join('');
+
+    $('uploadPreview').style.display = 'flex';
+    $('btnUploadSubmit').disabled = false;
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function submitDatasetUpload() {
+  if (!pendingUploadBase64) return;
+  const primaryKey = $('primaryKeySelect').value;
+  const filename = pendingFileName || 'Uploaded_Dataset.xlsx';
+
+  try {
+    $('btnUploadSubmit').disabled = true;
+    $('btnUploadSubmit').innerText = 'Uploading...';
+
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileData: pendingUploadBase64, filename, primaryKey })
+    });
+
+    const result = await res.json();
+    if (!result.success) throw new Error(result.message);
+
+    closeUploadModal();
+    showToast(`Successfully uploaded ${result.count} records!`, 'success');
+    await loadExcelData();
+    if ($('history-tab').classList.contains('active')) {
+      await renderHistoryTab();
+    }
+  } catch (err) {
+    alert("Upload failed: " + err.message);
+  } finally {
+    $('btnUploadSubmit').innerText = 'Import Dataset';
+    $('btnUploadSubmit').disabled = false;
+  }
+}
+
+async function confirmClearDataset() {
+  const confirmed = confirm("⚠️ Are you sure you want to permanently delete all current records and schema definitions?\n\nThis will clear out the dataset so you can upload a new one.");
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch('/api/dataset/clear', { method: 'POST' });
+    const result = await res.json();
+    if (!result.success) throw new Error(result.message);
+
+    if ($('uploadModal').style.display === 'flex') {
+      closeUploadModal();
+    }
+
+    showToast("Dataset cleared successfully! Total records: 0", "success");
+    await loadExcelData();
+  } catch (err) {
+    alert("Failed to clear dataset: " + err.message);
+  }
+}
+
+function renderDynamicFilters() {
+  const container = $('filtersGrid');
+  if (!container) return;
+
+  const categoryCols = activeSchema.columns.filter(c => c.data_type === 'category' || c.data_type === 'date');
+
+  let html = '';
+  categoryCols.forEach(col => {
+    const colName = col.column_name;
+    const safeId = 'filter_' + colName.replace(/[^a-zA-Z0-9]/g, '_');
+    
+    // Get unique sorted values
+    const uniqueVals = [...new Set(allRows.map(r => r[colName]).filter(v => v !== null && v !== undefined && String(v).trim() !== ''))].sort();
+
+    html += `
+      <div class="filter-group">
+        <label>${esc(colName)}</label>
+        <select id="${safeId}" data-col="${esc(colName)}" onchange="applyFilters()">
+          <option value="">All</option>
+          ${uniqueVals.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('')}
+        </select>
+      </div>
+    `;
+  });
+
+  html += `
+    <div class="filter-group" style="flex: 2;">
+      <label>Global Search</label>
+      <input id="globalSearchInput" placeholder="Search dataset..." oninput="applyFilters()">
+    </div>
+    <div class="filter-group">
+      <label>&nbsp;</label>
+      <button class="btn-outline" onclick="clearAllFilters()">Clear</button>
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
+function clearAllFilters() {
+  document.querySelectorAll('#filtersGrid select').forEach(s => s.value = '');
+  if ($('globalSearchInput')) $('globalSearchInput').value = '';
+  sortColumn = null;
+  sortDirection = 1;
+  applyFilters();
+}
+
+function applyFilters() {
+  const categoryCols = activeSchema.columns.filter(c => c.data_type === 'category' || c.data_type === 'date');
+  const activeFilters = {};
+
+  categoryCols.forEach(col => {
+    const colName = col.column_name;
+    const safeId = 'filter_' + colName.replace(/[^a-zA-Z0-9]/g, '_');
+    const el = $(safeId);
+    if (el && el.value) {
+      activeFilters[colName] = el.value;
+    }
+  });
+
+  const searchQ = $('globalSearchInput') ? $('globalSearchInput').value.trim().toLowerCase() : '';
+
+  rows = allRows.filter(r => {
+    for (const [col, val] of Object.entries(activeFilters)) {
+      if (String(r[col] ?? '') !== val) return false;
+    }
+    if (searchQ) {
+      const match = Object.values(r).some(val => String(val ?? '').toLowerCase().includes(searchQ));
+      if (!match) return false;
+    }
+    return true;
+  });
+
+  if (sortColumn) {
+    rows.sort((a, b) => {
+      const va = a[sortColumn]; const vb = b[sortColumn];
+      const na = Number(va); const nb = Number(vb);
+      if (!isNaN(na) && !isNaN(nb)) return (na - nb) * sortDirection;
+      return String(va ?? '').localeCompare(String(vb ?? '')) * sortDirection;
+    });
+  }
+
+  render();
+}
+
+function updateKpis() {
+  const grid = $('kpiGrid');
+  if (!grid) return;
+
+  const categoryCols = activeSchema.columns.filter(c => c.data_type === 'category');
+  const currencyCols = activeSchema.columns.filter(c => c.data_type === 'currency' || c.data_type === 'number');
+
+  let html = `
+    <div class="card kpi-card c0" onclick="switchTab('details')">
+      <div class="kpi-label">Total Records</div>
+      <div class="kpi-value">${rows.length}</div>
+      <div class="kpi-sub">Active Dataset</div>
+    </div>
+  `;
+
+  // Render top Category Breakdown KPIs
+  categoryCols.slice(0, 3).forEach((col, idx) => {
+    const colName = col.column_name;
+    const counts = {};
+    rows.forEach(r => {
+      const val = String(r[colName] || 'Uncategorized');
+      counts[val] = (counts[val] || 0) + 1;
+    });
+    const topKey = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || 'N/A';
+    const topVal = counts[topKey] || 0;
+
+    html += `
+      <div class="card kpi-card c${idx + 1}" onclick="switchTab('details')">
+        <div class="kpi-label">${esc(colName)}</div>
+        <div class="kpi-value">${topVal}</div>
+        <div class="kpi-sub">Top: ${esc(topKey)}</div>
+      </div>
+    `;
+  });
+
+  // Render Numeric/Currency Total KPIs
+  currencyCols.slice(0, 2).forEach((col, idx) => {
+    const colName = col.column_name;
+    const totalSum = rows.reduce((acc, r) => acc + (Number(String(r[colName] || '').replace(/[$€£₹,]/g, '')) || 0), 0);
+
+    html += `
+      <div class="card kpi-card c${idx + 4}" onclick="switchTab('details')">
+        <div class="kpi-label">${esc(colName)}</div>
+        <div class="kpi-value">${moneyShort(totalSum)}</div>
+        <div class="kpi-sub">Total Sum</div>
+      </div>
+    `;
+  });
+
+  grid.innerHTML = html;
+  $('rowCount').textContent = `${rows.length} record${rows.length === 1 ? '' : 's'}`;
+}
+
+function renderTable() {
+  const pk = activeSchema.primaryKey;
+  const cols = activeSchema.columns;
+
+  let headHtml = `<tr><th style="width:40px;"></th>`;
+  cols.forEach(c => {
+    const colName = c.column_name;
+    const marker = sortColumn === colName ? (sortDirection === 1 ? ' &uarr;' : ' &darr;') : '';
+    headHtml += `<th data-col="${esc(colName)}">${esc(colName)} ${marker}</th>`;
+  });
+  headHtml += `</tr>`;
+  $('thead').innerHTML = headHtml;
+
+  document.querySelectorAll('th[data-col]').forEach(th => {
+    th.onclick = () => {
+      const colName = th.dataset.col;
+      if (sortColumn === colName) sortDirection *= -1;
+      else { sortColumn = colName; sortDirection = 1; }
+      applyFilters();
+    };
+  });
+
+  $('tbody').innerHTML = rows.map(r => {
+    const pkVal = String(r[pk] || '').replace(/"/g, '&quot;').replace(/'/g, "\\'");
+    let rowHtml = `<tr>
+      <td>
+        <button class="row-action-btn" onclick="inlineEditRecord('${pkVal}')" title="Edit Record">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+        </button>
+      </td>
+    `;
+
+    cols.forEach(c => {
+      const colName = c.column_name;
+      const type = c.data_type;
+      const rawVal = r[colName];
+
+      if (type === 'currency') {
+        const num = Number(String(rawVal || '').replace(/[$€£₹,]/g, ''));
+        rowHtml += `<td class="money">${isNaN(num) ? esc(rawVal) : money(num)}</td>`;
+      } else if (type === 'category') {
+        rowHtml += `<td><span class="badge">${esc(rawVal || '—')}</span></td>`;
+      } else if (type === 'date') {
+        let dStr = rawVal;
+        if (rawVal instanceof Date) dStr = rawVal.toISOString().split('T')[0];
+        rowHtml += `<td>${esc(dStr || '—')}</td>`;
+      } else if (c.is_primary_key) {
+        rowHtml += `<td><strong>${esc(rawVal || '—')}</strong></td>`;
+      } else {
+        rowHtml += `<td><div style="max-width:200px; overflow:hidden; text-overflow:ellipsis;" title="${esc(rawVal || '')}">${esc(rawVal || '—')}</div></td>`;
+      }
+    });
+
+    rowHtml += `</tr>`;
+    return rowHtml;
+  }).join('');
+
+  $('empty').style.display = rows.length ? 'none' : 'flex';
+}
+
+function updateChartDropdowns() {
+  const categoryCols = activeSchema.columns.filter(c => c.data_type === 'category' || c.data_type === 'text');
+  const metricCols = activeSchema.columns.filter(c => c.data_type === 'currency' || c.data_type === 'number');
+
+  const dSelect = $('doughnutCategorySelect');
+  const bCatSelect = $('barCategorySelect');
+  const bMetSelect = $('barMetricSelect');
+  const rSelect = $('regionCategorySelect');
+  const gSelect = $('groupedSummarySelect');
+
+  if (categoryCols.length > 0) {
+    const catOptions = categoryCols.map(c => `<option value="${esc(c.column_name)}">${esc(c.column_name)}</option>`).join('');
+    if (dSelect) dSelect.innerHTML = catOptions;
+    if (bCatSelect) bCatSelect.innerHTML = catOptions;
+    if (rSelect) rSelect.innerHTML = catOptions;
+    if (gSelect) gSelect.innerHTML = catOptions;
+
+    if (categoryCols.length > 1) {
+      if (rSelect) rSelect.selectedIndex = 1;
+    }
+  }
+
+  if (metricCols.length > 0) {
+    const metOptions = metricCols.map(c => `<option value="${esc(c.column_name)}">${esc(c.column_name)}</option>`).join('');
+    if (bMetSelect) bMetSelect.innerHTML = metOptions;
+  } else {
+    if (bMetSelect) bMetSelect.innerHTML = `<option value="COUNT">Record Count</option>`;
+  }
+}
+
+function renderCharts() {
+  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
+
+  // Doughnut Chart (Category Distribution)
+  const doughnutCol = $('doughnutCategorySelect') ? $('doughnutCategorySelect').value : null;
+  if (doughnutCol) {
+    const counts = {};
+    let totalCount = 0;
+    rows.forEach(r => {
+      const key = String(r[doughnutCol] || 'Uncategorized').trim();
+      counts[key] = (counts[key] || 0) + 1;
+      totalCount++;
+    });
+
+    const sortedKeys = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+    const palette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#64748b', '#eab308', '#a855f7'];
+
+    if (doughnutChartInstance) doughnutChartInstance.destroy();
+    doughnutChartInstance = new Chart($('doughnutChart').getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: sortedKeys,
+        datasets: [{
+          data: sortedKeys.map(k => counts[k]),
+          backgroundColor: palette,
+          borderWidth: 2,
+          borderColor: '#ffffff',
+          hoverOffset: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '72%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const val = context.raw || 0;
+                const pct = totalCount > 0 ? ((val / totalCount) * 100).toFixed(1) : 0;
+                return ` ${context.label}: ${val} (${pct}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const legendEl = $('doughnutLegend');
+    if (legendEl) {
+      legendEl.innerHTML = sortedKeys.map((key, i) => {
+        const cnt = counts[key];
+        const pct = totalCount > 0 ? ((cnt / totalCount) * 100).toFixed(1) : 0;
+        const color = palette[i % palette.length];
+        return `
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:5px 8px; border-radius:4px; background:var(--bg-main);">
+            <div style="display:flex; align-items:center; gap:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+              <span style="width:10px; height:10px; border-radius:50%; background:${color}; flex-shrink:0;"></span>
+              <span style="font-weight:600; color:var(--primary); text-overflow:ellipsis; overflow:hidden;">${esc(key)}</span>
+            </div>
+            <div style="display:flex; gap:12px; font-weight:600; flex-shrink:0;">
+              <span style="color:var(--primary);">${cnt}</span>
+              <span style="color:var(--text-muted); width:45px; text-align:right;">${pct}%</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // Bar Chart
+  const barCatCol = $('barCategorySelect') ? $('barCategorySelect').value : null;
+  const barMetCol = $('barMetricSelect') ? $('barMetricSelect').value : null;
+  if (barCatCol) {
+    const dataMap = {};
+    rows.forEach(r => {
+      const key = String(r[barCatCol] || 'Uncategorized');
+      let val = 1;
+      if (barMetCol && barMetCol !== 'COUNT') {
+        val = Number(String(r[barMetCol] || '').replace(/[$€£₹,]/g, '')) || 0;
+      }
+      dataMap[key] = (dataMap[key] || 0) + val;
+    });
+    const labels = Object.keys(dataMap).slice(0, 10);
+
+    if (barChartInstance) barChartInstance.destroy();
+    barChartInstance = new Chart($('barChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{ label: barMetCol || 'Count', data: labels.map(l => dataMap[l]), backgroundColor: '#3b82f6', borderRadius: 4 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+  }
+
+  // Region / Breakdown Chart
+  const regionCol = $('regionCategorySelect') ? $('regionCategorySelect').value : null;
+  if (regionCol) {
+    const counts = {};
+    rows.forEach(r => {
+      const key = String(r[regionCol] || 'Uncategorized');
+      counts[key] = (counts[key] || 0) + 1;
+    });
+    const sorted = Object.keys(counts).sort((a, b) => counts[b] - counts[a]).slice(0, 8);
+
+    if (regionChartInstance) regionChartInstance.destroy();
+    regionChartInstance = new Chart($('regionChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: sorted,
+        datasets: [{ label: 'Records', data: sorted.map(l => counts[l]), backgroundColor: '#10b981', borderRadius: 6 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+  }
+}
+
+function renderGroupedSummary() {
+  const select = $('groupedSummarySelect');
+  const colName = select ? select.value : null;
+  const grid = $('regionGrid');
+  if (!grid || !colName) return;
+
+  const currencyCols = activeSchema.columns.filter(c => c.data_type === 'currency' || c.data_type === 'number');
+
+  const groups = {};
+  allRows.forEach(r => {
+    const key = String(r[colName] || 'Uncategorized');
+    if (!groups[key]) groups[key] = { count: 0, sums: {} };
+    groups[key].count += 1;
+
+    currencyCols.forEach(c => {
+      const num = Number(String(r[c.column_name] || '').replace(/[$€£₹,]/g, '')) || 0;
+      groups[key].sums[c.column_name] = (groups[key].sums[c.column_name] || 0) + num;
+    });
+  });
+
+  const keys = Object.keys(groups).sort();
+  grid.innerHTML = keys.map(k => {
+    const statsHtml = currencyCols.slice(0, 2).map(c => `
+      <div class="region-card-stat">
+        <span>${esc(c.column_name)}</span>
+        <span>${moneyShort(groups[k].sums[c.column_name])}</span>
+      </div>
+    `).join('');
+
+    return `
+      <div class="region-card" onclick="filterByGroup('${esc(colName)}', '${esc(k)}')">
+        <div class="region-card-title">${esc(k)}</div>
+        <div class="region-card-stat"><span>Records</span> <span>${groups[k].count}</span></div>
+        ${statsHtml}
+      </div>
+    `;
+  }).join('');
+}
+
+function filterByGroup(colName, val) {
+  switchTab('details');
+  const safeId = 'filter_' + colName.replace(/[^a-zA-Z0-9]/g, '_');
+  const el = $(safeId);
+  if (el) {
+    el.value = val;
+    applyFilters();
+  }
+}
+
+function renderContactsTab() {
+  const grid = $('contactsGrid');
+  if (!grid) return;
+
+  const contactCols = activeSchema.columns.filter(c => /contact|email|phone|owner|kam|name/i.test(c.column_name));
+
+  if (contactCols.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div>No contact fields detected in current dataset schema.</div></div>`;
+    return;
+  }
+
+  // Render contact summary
+  let html = '';
+  const pk = activeSchema.primaryKey;
+  allRows.slice(0, 12).forEach(r => {
+    const name = r[pk] || 'Contact Record';
+    const fieldsHtml = contactCols.map(c => `<div style="font-size:11px; color:var(--text-main);"><strong>${esc(c.column_name)}:</strong> ${esc(r[c.column_name] || '—')}</div>`).join('');
+
+    html += `
+      <div class="contact-card">
+        <div style="font-weight:700; color:var(--primary); font-size:13px;">${esc(name)}</div>
+        ${fieldsHtml}
+      </div>
+    `;
+  });
+
+  grid.innerHTML = html;
+}
+
+function render() {
+  updateKpis();
+  renderTable();
+  renderCharts();
+  renderGroupedSummary();
+  renderContactsTab();
+}
+
+// Modal & Form Logic
+let currentOppMode = 'add';
+
+function openOppModal() {
+  buildDynamicForm();
+  showOppChoices();
+  $('oppModal').style.display = 'flex';
+}
+
+function showOppChoices() {
+  $('oppModalChoice').style.display = 'block';
+  $('oppModalForm').style.display = 'none';
+  $('oppModalTitle').innerText = 'Record Management';
+}
+
+function setOppMode(mode) {
+  currentOppMode = mode;
+  buildDynamicForm();
+  $('oppModalChoice').style.display = 'none';
+  $('oppModalForm').style.display = 'flex';
+  
+  if (mode === 'add') {
+    $('oppModalTitle').innerText = 'Add New Record';
+  } else {
+    $('oppModalTitle').innerText = 'Update Existing Record';
+  }
+}
+
+function buildDynamicForm() {
+  const container = $('dynamicFormFields');
+  if (!container) return;
+
+  const pk = activeSchema.primaryKey;
+  let html = '';
+
+  activeSchema.columns.forEach(c => {
+    const colName = c.column_name;
+    const isPk = c.is_primary_key;
+    const type = c.data_type;
+
+    html += `<div class="form-group" style="position:relative;">`;
+    html += `<label>${esc(colName)} ${isPk ? '* (Primary Key)' : ''}</label>`;
+
+    if (isPk) {
+      html += `<input type="text" id="form_${esc(colName)}" ${isPk ? 'required' : ''} placeholder="Unique identifier" oninput="handleRecordSearch(event)">`;
+      html += `<div id="recordSuggestions" class="suggestions-box"></div>`;
+    } else if (type === 'category') {
+      const uniqueVals = [...new Set(allRows.map(r => r[colName]).filter(Boolean))].sort();
+      html += `
+        <select id="form_${esc(colName)}">
+          <option value="">(Select)</option>
+          ${uniqueVals.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('')}
+        </select>
+      `;
+    } else if (type === 'number' || type === 'currency') {
+      html += `<input type="number" step="any" id="form_${esc(colName)}" placeholder="0.00">`;
+    } else if (type === 'date') {
+      html += `<input type="date" id="form_${esc(colName)}">`;
+    } else {
+      html += `<input type="text" id="form_${esc(colName)}">`;
+    }
+
+    html += `</div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+function handleRecordSearch(e) {
+  if (currentOppMode !== 'edit') return;
+  const val = e.target.value.toLowerCase();
+  const box = $('recordSuggestions');
+  if (!box) return;
+
+  if (!val || val.length < 2) {
+    box.style.display = 'none';
+    return;
+  }
+
+  const pk = activeSchema.primaryKey;
+  const matches = allRows.filter(r => String(r[pk] || '').toLowerCase().includes(val)).slice(0, 8);
+
+  if (matches.length === 0) {
+    box.innerHTML = `<div style="padding: 8px 12px; font-size: 11px; color: var(--text-muted);">No matching records found.</div>`;
+    box.style.display = 'block';
+    return;
+  }
+
+  box.innerHTML = matches.map(r => {
+    const pkVal = String(r[pk] || '');
+    const escPk = pkVal.replace(/"/g, '&quot;').replace(/'/g, "\\'");
+    return `
+      <div class="suggestion-item" onclick="selectRecord('${escPk}')">
+        <span class="suggestion-opp">${esc(pkVal)}</span>
+      </div>
+    `;
+  }).join('');
+  box.style.display = 'block';
+}
+
+function inlineEditRecord(pkVal) {
+  setOppMode('edit');
+  selectRecord(pkVal);
+  $('oppModal').style.display = 'flex';
+}
+
+function selectRecord(pkVal) {
+  const pk = activeSchema.primaryKey;
+  const targetStr = String(pkVal || '').trim().toLowerCase();
+  const row = allRows.find(r => String(r[pk] || '').trim().toLowerCase() === targetStr);
+  if (!row) return;
+
+  activeSchema.columns.forEach(c => {
+    const colName = c.column_name;
+    const el = $('form_' + colName);
+    if (el) {
+      let val = row[colName] ?? '';
+      if (c.data_type === 'date' && val) {
+        const dObj = new Date(val);
+        if (!isNaN(dObj.getTime())) val = dObj.toISOString().split('T')[0];
+      }
+      el.value = val;
+    }
+  });
+
+  const box = $('recordSuggestions');
+  if (box) box.style.display = 'none';
+}
+
+async function submitOpp(event) {
+  event.preventDefault();
+  const newData = {};
+
+  activeSchema.columns.forEach(c => {
+    const colName = c.column_name;
+    const el = $('form_' + colName);
+    if (el) {
+      const rawVal = el.value.trim();
+      if ((c.data_type === 'number' || c.data_type === 'currency') && rawVal !== '') {
+        newData[colName] = parseFloat(rawVal);
+      } else {
+        newData[colName] = el.value;
+      }
+    }
+  });
+
+  const pk = activeSchema.primaryKey;
+  if (!newData[pk] && newData[pk] !== 0) {
+    alert(`Primary key (${pk}) is required!`);
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/data", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newData)
+    });
+    const result = await res.json();
+    if (result.success) {
+      $('oppModal').style.display = 'none';
+      showToast("Record saved successfully!", "success");
+      await loadExcelData();
+      if (document.getElementById('logPanel').classList.contains('open')) {
+        fetchLogs();
+      }
+    } else {
+      alert("Error: " + result.message);
+    }
+  } catch (e) {
+    alert("Failed to save data: " + e.message);
+  }
+}
+
+async function loadExcelData() {
+  try {
+    const response = await fetch("/api/data", { cache: "no-store" });
+    const result = await response.json();
+    if (!response.ok || !result.success) throw new Error(result.message || "Unable to load data");
+
+    allRows = result.rows || [];
+    if (result.schema) {
+      activeSchema = result.schema;
+    }
+
+    $('datasetSourceSubtitle').textContent = `Source: ${result.source || 'Dataset'} (${allRows.length} rows)`;
+
+    renderDynamicFilters();
+    updateChartDropdowns();
+    applyFilters();
+
+    if ($('search-tab') && $('search-tab').classList.contains('active')) {
+      renderSearchTab();
+    }
+    if ($('history-tab') && $('history-tab').classList.contains('active')) {
+      renderHistoryTab();
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+/* Global Search Logic */
+let tabSearchTimeout = null;
+function debouncedTabSearch(e) {
+  clearTimeout(tabSearchTimeout);
+  tabSearchTimeout = setTimeout(() => {
+    renderSearchTab();
+  }, 300);
+}
+
+function clearTabSearch() {
+  if ($('tabSearchInput')) $('tabSearchInput').value = '';
+  renderSearchTab();
+}
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function renderSearchTab() {
+  const input = $('tabSearchInput');
+  const query = input ? input.value.trim() : '';
+  const qLower = query.toLowerCase();
+  const banner = $('searchBanner');
+  const empty = $('searchEmpty');
+  const thead = $('searchThead');
+  const tbody = $('searchTbody');
+
+  if (!activeSchema || !activeSchema.columns || activeSchema.columns.length === 0 || allRows.length === 0) {
+    if (banner) banner.style.display = 'none';
+    if (empty) {
+      empty.style.display = 'flex';
+      empty.innerHTML = '<div>No active dataset rows found. Upload a dataset to search.</div>';
+    }
+    if (thead) thead.innerHTML = '';
+    if (tbody) tbody.innerHTML = '';
+    return;
+  }
+
+  if (!query) {
+    if (banner) banner.style.display = 'none';
+    if (empty) {
+      empty.style.display = 'flex';
+      empty.innerHTML = '<div>Type a keyword above to search across all columns of the active dataset.</div>';
+    }
+    if (thead) thead.innerHTML = '';
+    if (tbody) tbody.innerHTML = '';
+    return;
+  }
+
+  // Search rows across all columns
+  const matchedRows = allRows.filter(row => {
+    return Object.values(row).some(val => String(val ?? '').toLowerCase().includes(qLower));
+  });
+
+  if (banner) {
+    banner.style.display = 'block';
+    banner.innerHTML = `Found <strong>${matchedRows.length}</strong> matching record${matchedRows.length === 1 ? '' : 's'} for "<em>${esc(query)}</em>" across all fields. Click any row to view or edit.`;
+  }
+
+  if (matchedRows.length === 0) {
+    if (empty) {
+      empty.style.display = 'flex';
+      empty.innerHTML = `<div>No records match "${esc(query)}".</div>`;
+    }
+    if (thead) thead.innerHTML = '';
+    if (tbody) tbody.innerHTML = '';
+    return;
+  }
+
+  if (empty) empty.style.display = 'none';
+
+  // Render search table header
+  if (thead) {
+    thead.innerHTML = `<tr>` + activeSchema.columns.map(c => `<th>${esc(c.column_name)}</th>`).join('') + `</tr>`;
+  }
+
+  // Render search table body with highlighted matched text
+  if (tbody) {
+    const qRegex = new RegExp(escapeRegExp(query), 'gi');
+
+    tbody.innerHTML = matchedRows.map(row => {
+      const pkVal = row[activeSchema.primaryKey] || '';
+      const cells = activeSchema.columns.map(col => {
+        const rawVal = row[col.column_name];
+        const strVal = rawVal !== null && rawVal !== undefined ? String(rawVal) : '—';
+        
+        if (col.data_type === 'currency') {
+          const formattedMoney = money(rawVal);
+          const highlightedMoney = strVal.toLowerCase().includes(qLower) 
+            ? formattedMoney.replace(qRegex, match => `<mark class="search-highlight">${esc(match)}</mark>`)
+            : esc(formattedMoney);
+          return `<td class="money">$${highlightedMoney}</td>`;
+        } else if (col.data_type === 'category') {
+          const highlightedCat = strVal.toLowerCase().includes(qLower)
+            ? strVal.replace(qRegex, match => `<mark class="search-highlight">${esc(match)}</mark>`)
+            : esc(strVal);
+          return `<td><span class="badge">${highlightedCat}</span></td>`;
+        } else {
+          const highlightedText = strVal.toLowerCase().includes(qLower)
+            ? strVal.replace(qRegex, match => `<mark class="search-highlight">${esc(match)}</mark>`)
+            : esc(strVal);
+          return `<td>${highlightedText}</td>`;
+        }
+      }).join('');
+
+      return `<tr style="cursor:pointer;" onclick="inlineEditRecord('${esc(pkVal)}')">${cells}</tr>`;
+    }).join('');
+  }
+}
+
+/* Dataset History Logic */
+async function renderHistoryTab() {
+  const container = $('historyGrid');
+  if (!container) return;
+  container.innerHTML = '<div style="padding:20px; color:var(--text-muted);">Loading dataset history...</div>';
+
+  try {
+    const res = await fetch('/api/datasets');
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+
+    const datasets = data.datasets || [];
+    if (datasets.length === 0) {
+      container.innerHTML = `<div class="empty-state"><div>No dataset versions found in history. Click "Upload New Dataset" to import one.</div></div>`;
+      return;
+    }
+
+    container.innerHTML = datasets.map(d => {
+      const isAct = d.is_active;
+      const dt = new Date(d.uploaded_at).toLocaleString();
+      return `
+        <div class="region-card" style="${isAct ? 'border-color:var(--accent); background:var(--bg-main);' : ''}">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+            <div class="region-card-title" style="margin-bottom:0; font-size:14px; word-break:break-all;">
+              ${esc(d.name)}
+            </div>
+            ${isAct 
+              ? `<span class="badge" style="background:var(--accent); color:white; border:none; font-size:10px;">ACTIVE</span>` 
+              : `<span class="badge" style="font-size:10px; color:var(--text-muted);">INACTIVE</span>`}
+          </div>
+          
+          <div class="region-card-stat"><span>Uploaded:</span><span>${esc(dt)}</span></div>
+          <div class="region-card-stat"><span>Row Count:</span><span>${d.row_count} rows</span></div>
+          <div class="region-card-stat"><span>Column Count:</span><span>${d.column_count} columns</span></div>
+          <div class="region-card-stat"><span>Primary Key:</span><span>${esc(d.primary_key || '—')}</span></div>
+
+          <div style="display:flex; gap:8px; margin-top:16px;">
+            ${isAct 
+              ? `<button class="btn-sm btn-outline" style="flex:1; cursor:default; opacity:0.8;" disabled>Currently Active</button>`
+              : `<button class="btn-sm btn-save" style="flex:1;" onclick="activateDataset('${esc(d.id)}')">Switch to Dataset</button>`
+            }
+            <button class="btn-sm btn-outline" style="border-color:var(--danger); color:var(--danger);" onclick="deleteDatasetHistory('${esc(d.id)}', '${esc(d.name)}')">Delete</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = `<div style="color:var(--danger); padding:20px;">Failed to load dataset history: ${esc(err.message)}</div>`;
+  }
+}
+
+async function activateDataset(datasetId) {
+  try {
+    const res = await fetch(`/api/datasets/${datasetId}/activate`, { method: 'POST' });
+    const result = await res.json();
+    if (!result.success) throw new Error(result.message);
+
+    showToast("Switched active dataset successfully!", "success");
+    await loadExcelData();
+    await renderHistoryTab();
+  } catch (err) {
+    alert("Failed to activate dataset: " + err.message);
+  }
+}
+
+async function deleteDatasetHistory(datasetId, datasetName) {
+  const confirmed = confirm(`⚠️ Are you sure you want to delete dataset '${datasetName}' from history?\n\nThis will remove its schema and rows.`);
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch(`/api/datasets/${datasetId}`, { method: 'DELETE' });
+    const result = await res.json();
+    if (!result.success) throw new Error(result.message);
+
+    showToast("Dataset deleted from history.", "success");
+    await loadExcelData();
+    await renderHistoryTab();
+  } catch (err) {
+    alert("Failed to delete dataset: " + err.message);
+  }
+}
+
+/* Activity Log & Toast Logic */
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  
+  const icon = type === 'success' 
+    ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+    : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+
+  toast.innerHTML = `${icon} <div>${esc(message)}</div>`;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add('fade-out');
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
+
+function openLogPanel() {
+  document.getElementById('logOverlay').style.display = 'block';
+  setTimeout(() => document.getElementById('logPanel').classList.add('open'), 10);
+  fetchLogs();
+}
+
+function closeLogPanel() {
+  document.getElementById('logPanel').classList.remove('open');
+  setTimeout(() => document.getElementById('logOverlay').style.display = 'none', 300);
+}
+
+async function fetchLogs() {
+  const body = document.getElementById('logBody');
+  body.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">Loading logs...</div>';
+  
+  try {
+    const res = await fetch('/api/logs');
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+    
+    if (data.logs.length === 0) {
+      body.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">No activity logs found.</div>';
+      return;
+    }
+
+    const grouped = {};
+    data.logs.forEach(log => {
+      const date = new Date(log.created_at);
+      const today = new Date();
+      const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+      
+      let dayKey = date.toLocaleDateString();
+      if (date.toDateString() === today.toDateString()) dayKey = "Today";
+      else if (date.toDateString() === yesterday.toDateString()) dayKey = "Yesterday";
+
+      if (!grouped[dayKey]) grouped[dayKey] = [];
+      grouped[dayKey].push(log);
+    });
+
+    let html = '';
+    for (const [day, logs] of Object.entries(grouped)) {
+      html += `<div class="log-day-group"><div class="log-day-header">${day}</div>`;
+      logs.forEach(log => {
+        const time = new Date(log.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const typeClass = log.action === 'Added' || log.action === 'Uploaded' ? 'added' : 'updated';
+        const hasChanges = log.changes && Object.keys(log.changes).length > 0;
+        
+        let changesHtml = '';
+        if (hasChanges) {
+          changesHtml = `<div class="log-changes">`;
+          for (const [field, vals] of Object.entries(log.changes)) {
+            changesHtml += `
+              <div class="change-row">
+                <div class="change-field">${esc(field)}</div>
+                <div class="change-values">
+                  <div class="change-old">- ${esc(vals.old)}</div>
+                  <div class="change-new">+ ${esc(vals.new)}</div>
+                </div>
+              </div>
+            `;
+          }
+          changesHtml += `</div>`;
+        }
+
+        html += `
+          <div class="log-item ${typeClass} ${hasChanges ? 'has-changes' : ''}" ${hasChanges ? `onclick="this.classList.toggle('expanded')"` : ''}>
+            <div class="log-item-title">${esc(log.details)}</div>
+            <div class="log-item-time">
+              <span>${time}</span>
+              ${hasChanges ? `<svg class="expand-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>` : ''}
+            </div>
+            ${changesHtml}
+          </div>
+        `;
+      });
+      html += `</div>`;
+    }
+    body.innerHTML = html;
+  } catch (error) {
+    body.innerHTML = `<div style="text-align: center; color: var(--danger); padding: 20px;">Failed to load logs:<br/><br/>${esc(error.message)}</div>`;
+  }
+}
+
+function setupSSE() {
+  const evtSource = new EventSource("/api/events");
+  evtSource.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+    showToast(data.message);
+    loadExcelData();
+    if (document.getElementById('logPanel').classList.contains('open')) {
+      fetchLogs();
+    }
+  };
+}
+
+setupSSE();
+loadExcelData();
+</script>
+</body>
+</html>

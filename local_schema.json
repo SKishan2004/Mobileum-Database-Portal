@@ -1,0 +1,95 @@
+{
+  "primaryKey": "Account ID",
+  "columns": [
+    {
+      "column_name": "Account ID",
+      "data_type": "date",
+      "is_primary_key": true,
+      "display_order": 0
+    },
+    {
+      "column_name": "Customer Name",
+      "data_type": "text",
+      "is_primary_key": false,
+      "display_order": 1
+    },
+    {
+      "column_name": "Telecom Circle",
+      "data_type": "category",
+      "is_primary_key": false,
+      "display_order": 2
+    },
+    {
+      "column_name": "Plan Type",
+      "data_type": "category",
+      "is_primary_key": false,
+      "display_order": 3
+    },
+    {
+      "column_name": "Network Type",
+      "data_type": "category",
+      "is_primary_key": false,
+      "display_order": 4
+    },
+    {
+      "column_name": "Number of Connections",
+      "data_type": "number",
+      "is_primary_key": false,
+      "display_order": 5
+    },
+    {
+      "column_name": "Monthly Recurring Charge (INR)",
+      "data_type": "number",
+      "is_primary_key": false,
+      "display_order": 6
+    },
+    {
+      "column_name": "ARPU (INR)",
+      "data_type": "number",
+      "is_primary_key": false,
+      "display_order": 7
+    },
+    {
+      "column_name": "Contract Start Date",
+      "data_type": "date",
+      "is_primary_key": false,
+      "display_order": 8
+    },
+    {
+      "column_name": "Contract End Date",
+      "data_type": "date",
+      "is_primary_key": false,
+      "display_order": 9
+    },
+    {
+      "column_name": "Renewal Status",
+      "data_type": "category",
+      "is_primary_key": false,
+      "display_order": 10
+    },
+    {
+      "column_name": "Churn Risk Level",
+      "data_type": "category",
+      "is_primary_key": false,
+      "display_order": 11
+    },
+    {
+      "column_name": "Account Manager",
+      "data_type": "category",
+      "is_primary_key": false,
+      "display_order": 12
+    },
+    {
+      "column_name": "Last Interaction Notes",
+      "data_type": "category",
+      "is_primary_key": false,
+      "display_order": 13
+    },
+    {
+      "column_name": "Contract Value (INR)",
+      "data_type": "currency",
+      "is_primary_key": false,
+      "display_order": 14
+    }
+  ]
+}

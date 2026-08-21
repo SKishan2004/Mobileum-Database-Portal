@@ -528,11 +528,15 @@ app.post("/api/upload", async (req, res) => {
     const datasetName = filename || `Upload_${new Date().toISOString().split("T")[0]}.xlsx`;
 
     if (supabase) {
-      // Deactivate existing datasets
-      await supabase.from("datasets").update({ is_active: false }).neq("id", "00000000-0000-0000-0000-000000000000");
+      // Deactivate existing datasets safely
+      try {
+        await supabase.from("datasets").update({ is_active: false }).neq("id", "00000000-0000-0000-0000-000000000000");
+      } catch (dsErr) {
+        console.warn("Dataset deactivation warning:", dsErr.message);
+      }
 
       // Insert dataset record
-      await supabase.from("datasets").insert([{
+      const { error: dsInsertErr } = await supabase.from("datasets").insert([{
         id: datasetId,
         name: datasetName,
         uploaded_at: new Date().toISOString(),
@@ -541,6 +545,9 @@ app.post("/api/upload", async (req, res) => {
         primary_key: pkField,
         is_active: true
       }]);
+      if (dsInsertErr) {
+        console.error("Dataset insert error:", dsInsertErr.message);
+      }
 
       // Insert schema
       const schemaRecords = inferred.columns.map(c => ({

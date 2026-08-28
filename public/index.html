@@ -909,6 +909,7 @@ async function submitDatasetUpload() {
     closeUploadModal();
     showToast(`Successfully uploaded ${result.count} records!`, 'success');
     await loadExcelData();
+    switchTab('dashboard');
     if ($('history-tab').classList.contains('active')) {
       await renderHistoryTab();
     }
@@ -1662,6 +1663,18 @@ async function loadExcelData() {
 
     $('datasetSourceSubtitle').textContent = `Source: ${result.source || 'Dataset'} (${allRows.length} rows)`;
 
+    // Clean up active filter columns that do not exist in the new dataset schema
+    if (activeSchema && Array.isArray(activeSchema.columns)) {
+      const validCols = new Set(activeSchema.columns.map(c => c.column_name));
+      for (const col of Array.from(activeFilterCols)) {
+        if (!validCols.has(col)) {
+          activeFilterCols.delete(col);
+        }
+      }
+    } else {
+      activeFilterCols.clear();
+    }
+
     renderDynamicFilters();
     updateChartDropdowns();
     applyFilters();
@@ -1848,6 +1861,7 @@ async function activateDataset(datasetId) {
     showToast("Switched active dataset successfully!", "success");
     await loadExcelData();
     await renderHistoryTab();
+    switchTab('dashboard');
   } catch (err) {
     alert("Failed to activate dataset: " + err.message);
   }

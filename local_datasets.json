@@ -1,12 +1,132 @@
 [
   {
+    "id": "ds_1787933802268",
+    "name": "Mobileum_Production_Infrastructure_Requirements (2).xlsx",
+    "uploaded_at": "2026-08-28T16:16:42.281Z",
+    "row_count": 23,
+    "column_count": 2,
+    "primary_key": "Mobileum Roaming Change Automation Platform",
+    "is_active": true,
+    "schema": {
+      "primaryKey": "Mobileum Roaming Change Automation Platform",
+      "columns": [
+        {
+          "column_name": "Mobileum Roaming Change Automation Platform",
+          "data_type": "category",
+          "is_primary_key": true,
+          "display_order": 0
+        },
+        {
+          "column_name": "__EMPTY",
+          "data_type": "category",
+          "is_primary_key": false,
+          "display_order": 1
+        }
+      ]
+    },
+    "rows": [
+      {
+        "Mobileum Roaming Change Automation Platform": "Production Infrastructure Requirements — Red Hat OpenShift",
+        "__EMPTY": ""
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "This document specifies the servers, database, repository, network and capacity needed to run the platform in production. Sizing is built around scheduled heartbeat document ingestion of 5,000 documents/day across an 18-hour operational window (~278 documents/hour), the platform's primary operating mode.",
+        "__EMPTY": ""
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "Production Sizing Basis",
+        "__EMPTY": ""
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "Heartbeat ingestion rate",
+        "__EMPTY": "~278 documents/hour (5,000 docs / 18-hr window)"
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "Heartbeat polling interval",
+        "__EMPTY": "Every 15 minutes (scheduler check-in cadence)"
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "Documents / day",
+        "__EMPTY": "5,000"
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "Documents / year",
+        "__EMPTY": "~1.83 million"
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "Average document size",
+        "__EMPTY": "500 KB"
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "Peak document size",
+        "__EMPTY": "2 MB"
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "Daily inbound traffic",
+        "__EMPTY": "2.38 GB/day average, up to 9.77 GB/day peak"
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "Concurrent users",
+        "__EMPTY": "500"
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "API throughput",
+        "__EMPTY": "200+ requests/second"
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "Online retention",
+        "__EMPTY": "3 years, with archival to cold storage beyond that"
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "AI inference",
+        "__EMPTY": "Google Gemini via Vertex AI — managed external service, no on-cluster GPU"
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "Document Index",
+        "__EMPTY": ""
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "Component Specifications",
+        "__EMPTY": "Every component: product, version, quantity, sizing, redundancy"
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "OpenShift Cluster Sizing",
+        "__EMPTY": "Node counts and hardware specification for the cluster"
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "Capacity Planning",
+        "__EMPTY": "Ingestion rate, traffic, concurrency and throughput"
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "Database & Storage Sizing",
+        "__EMPTY": "Capacity model for PostgreSQL and the document repository"
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "Network & Connectivity",
+        "__EMPTY": "Required ports, protocols and network SLAs"
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "High Availability & Disaster Recovery",
+        "__EMPTY": "Failure mode, recovery mechanism and RTO/RPO per component"
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "Provisioning Checklist",
+        "__EMPTY": "What the infrastructure team sets up before go-live"
+      },
+      {
+        "Mobileum Roaming Change Automation Platform": "Figures below are the sizing target for go-live. Confirm against measured production volumes during load testing and revisit at the first capacity review.",
+        "__EMPTY": ""
+      }
+    ]
+  },
+  {
     "id": "ds_default_1000",
     "name": "Renewal_Opportunity_1000_Realistic.xlsx",
     "uploaded_at": "2026-08-19T09:50:34.574Z",
     "row_count": 1002,
     "column_count": 30,
     "primary_key": "Opportunity Name",
-    "is_active": true,
+    "is_active": false,
     "schema": {
       "primaryKey": "Opportunity Name",
       "columns": [

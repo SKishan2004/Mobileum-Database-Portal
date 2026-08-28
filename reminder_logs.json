@@ -1,0 +1,62 @@
+[
+  {
+    "id": "rem_1787899738822_uvf2",
+    "opportunityId": "Claro Network Optimization Renewal - APAC 0965",
+    "opportunityName": "Claro Network Optimization Renewal - APAC 0965",
+    "owner": "David Miller",
+    "remindDate": "2026-08-28",
+    "sentDate": "2026-08-28",
+    "timestamp": "2026-08-28T06:48:58.822Z",
+    "recipients": [
+      "kishansukumar2004@gmail.com",
+      "nbhargow@gmail.com"
+    ],
+    "status": "DELIVERED",
+    "details": ""
+  },
+  {
+    "id": "rem_1787899582056_b938",
+    "opportunityId": "Test Enterprise Renewal 2026",
+    "opportunityName": "Test Enterprise Renewal 2026",
+    "owner": "Alexander Wright",
+    "remindDate": "2026-08-29",
+    "sentDate": "2026-08-28",
+    "timestamp": "2026-08-28T06:46:22.056Z",
+    "recipients": [
+      "kishansukumar2004@gmail.com",
+      "nbhargow@gmail.com"
+    ],
+    "status": "DELIVERED",
+    "details": ""
+  },
+  {
+    "id": "rem_1787899229659_1q34",
+    "opportunityId": "Claro Network Optimization Renewal - APAC 0965",
+    "opportunityName": "Claro Network Optimization Renewal - APAC 0965",
+    "owner": "David Miller",
+    "remindDate": "2026-08-28",
+    "sentDate": "2026-08-28",
+    "timestamp": "2026-08-28T06:40:29.659Z",
+    "recipients": [
+      "kishansukumar2004@gmail.com",
+      "nbhargow@gmail.com"
+    ],
+    "status": "SIMULATED",
+    "details": "Email alert simulated successfully (SMTP not configured in .env)."
+  },
+  {
+    "id": "rem_1787898475517_5egx",
+    "opportunityId": "Claro Network Optimization Renewal - APAC 0965",
+    "opportunityName": "Claro Network Optimization Renewal - APAC 0965",
+    "owner": "David Miller",
+    "remindDate": "2026-08-28",
+    "sentDate": "2026-08-28",
+    "timestamp": "2026-08-28T06:27:55.517Z",
+    "recipients": [
+      "kishansukumar2004@gmail.com",
+      "nbhargow@gmail.com"
+    ],
+    "status": "SIMULATED",
+    "details": "Email alert simulated successfully (SMTP not configured in .env)."
+  }
+]

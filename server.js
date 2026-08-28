@@ -7,6 +7,8 @@ const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const { initScheduler, runReminderCheck, getUpcomingReminders, getReminderLogs } = require("./reminderScheduler");
+const { sendChangeNotificationEmail } = require("./emailService");
 
 // Increase payload limit for Excel base64 uploads
 app.use(express.json({ limit: "50mb" }));
@@ -81,7 +83,7 @@ function inferSchema(rows, requestedPrimaryKey) {
           dataType = (isCurrencyName || hasCurrencySymbol) ? "currency" : "number";
         } else {
           const uniqueVals = new Set(nonEmptyVals.map(v => String(v).trim()));
-          if (uniqueVals.size <= 15 && uniqueVals.size > 0) {
+          if (uniqueVals.size <= 35 && uniqueVals.size > 0) {
             dataType = "category";
           } else {
             dataType = "text";
@@ -669,6 +671,38 @@ app.get("/api/search", async (req, res) => {
   }
 });
 
+async function getActiveDatasetRows() {
+  const activeDs = await getActiveDatasetInfo();
+  if (!activeDs) return [];
+
+  if (supabase) {
+    let allData = [];
+    let from = 0;
+    const step = 1000;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from("renewals")
+        .select("data")
+        .eq("dataset_id", activeDs.id)
+        .range(from, from + step - 1);
+
+      if (error || !data || data.length === 0) break;
+      allData = allData.concat(data);
+
+      if (data.length < step) hasMore = false;
+      else from += step;
+    }
+
+    return allData.map(row => row.data);
+  }
+
+  const datasets = getLocalDatasets();
+  const target = datasets.find(d => d.id === activeDs.id) || datasets[0];
+  return target ? target.rows : [];
+}
+
 app.get("/api/data", async (req, res) => {
   try {
     const activeDs = await getActiveDatasetInfo();
@@ -686,55 +720,15 @@ app.get("/api/data", async (req, res) => {
       });
     }
 
-    if (supabase) {
-      let allData = [];
-      let from = 0;
-      const step = 1000;
-      let hasMore = true;
-      let totalCount = 0;
-
-      while (hasMore) {
-        const { data, error, count } = await supabase
-          .from("renewals")
-          .select("data", { count: "exact" })
-          .eq("dataset_id", activeDs.id)
-          .range(from, from + step - 1);
-
-        if (error) throw error;
-        if (from === 0) totalCount = count;
-
-        allData = allData.concat(data);
-
-        if (data.length < step) {
-          hasMore = false;
-        } else {
-          from += step;
-        }
-      }
-
-      const rows = allData.map((row) => row.data);
-
-      return res.json({
-        success: true,
-        source: `Supabase DB (${activeDs.name})`,
-        sheet: "Renewals",
-        lastModified: activeDs.uploaded_at || new Date().toISOString(),
-        count: totalCount || rows.length,
-        rows: rows,
-        schema: schema
-      });
-    }
-
-    const datasets = getLocalDatasets();
-    const target = datasets.find(d => d.id === activeDs.id) || datasets[0];
+    const rows = await getActiveDatasetRows();
 
     res.json({
       success: true,
-      source: `Local File (${target ? target.name : 'Dataset'})`,
+      source: supabase ? `Supabase DB (${activeDs.name})` : `Local File (${activeDs.name || 'Dataset'})`,
       sheet: "Renewals",
-      lastModified: target ? target.uploaded_at : new Date().toISOString(),
-      count: target ? target.rows.length : 0,
-      rows: target ? target.rows : [],
+      lastModified: activeDs.uploaded_at || new Date().toISOString(),
+      count: rows.length,
+      rows: rows,
       schema: schema
     });
   } catch (error) {
@@ -742,6 +736,40 @@ app.get("/api/data", async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
+
+// Reminder Alert Endpoints
+app.post("/api/reminders/check", async (req, res) => {
+  try {
+    const rows = await getActiveDatasetRows();
+    const result = await runReminderCheck(rows, true);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    console.error("Error checking reminders:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get("/api/reminders/upcoming", async (req, res) => {
+  try {
+    const days = parseInt(req.query.days || "7", 10);
+    const rows = await getActiveDatasetRows();
+    const upcoming = getUpcomingReminders(rows, days);
+    res.json({ success: true, count: upcoming.length, upcoming: upcoming });
+  } catch (error) {
+    console.error("Error fetching upcoming reminders:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get("/api/reminders/logs", (req, res) => {
+  try {
+    const logs = getReminderLogs();
+    res.json({ success: true, logs: logs });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 
 app.post("/api/data", async (req, res) => {
   try {
@@ -841,6 +869,14 @@ app.post("/api/data", async (req, res) => {
         timestamp: new Date().toISOString()
       });
 
+      // Automatically send email change alert to opportunity owner & global manager
+      sendChangeNotificationEmail({
+        recordName: primaryKeyValue,
+        recordData: mergedData,
+        changes: changes,
+        action: action
+      }).catch(err => console.error("Error sending change email alert:", err.message));
+
       return res.json({ success: true, message: `Record ${isUpdate ? 'updated' : 'added'} successfully` });
     }
 
@@ -890,6 +926,14 @@ app.post("/api/data", async (req, res) => {
         message: logMessage,
         timestamp: new Date().toISOString()
       });
+
+      // Automatically send email change alert to opportunity owner & global manager
+      sendChangeNotificationEmail({
+        recordName: primaryKeyValue,
+        recordData: existingIndex >= 0 ? target.rows[existingIndex] : newData,
+        changes: changes,
+        action: action
+      }).catch(err => console.error("Error sending change email alert:", err.message));
     }
 
     res.json({ success: true, message: "Data saved successfully" });
@@ -907,7 +951,9 @@ if (process.env.NODE_ENV !== "production") {
   app.listen(PORT, () => {
     console.log(`Renewal Dashboard running at http://localhost:${PORT}`);
     console.log(`Data Source: ${supabase ? `Supabase (${supabaseUrl})` : "Local Multi-Dataset Mode"}`);
+    initScheduler(getActiveDatasetRows);
   });
 }
+
 
 module.exports = app;

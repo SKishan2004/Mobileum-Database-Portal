@@ -205,12 +205,72 @@
   .chart-container { padding: 20px; height: 300px; position: relative; }
 
   .filters-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) 100px; gap: 16px;
-    padding: 20px; background: var(--bg-main); border-bottom: 1px solid var(--border-color);
+    display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;
+    padding: 16px 20px; background: var(--bg-main); border-bottom: 1px solid var(--border-color);
   }
 
-  .filter-group { display: flex; flex-direction: column; gap: 6px; }
+  .filter-group { display: flex; flex-direction: column; gap: 6px; flex: 1 1 180px; min-width: 160px; }
   .filter-group label { font-size: 11px; font-weight: 600; color: var(--text-main); }
+
+  .filter-card-active {
+    position: relative;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .filter-card-active:hover {
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .filter-cross-btn {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease, background-color 0.15s, color 0.15s;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 50%;
+  }
+
+  .filter-card-active:hover .filter-cross-btn {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .filter-cross-btn:hover {
+    color: #dc3545;
+    background: rgba(220, 53, 69, 0.12);
+  }
+
+  .add-filter-menu-item {
+    padding: 8px 14px;
+    font-size: 12px;
+    color: var(--text-main);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.15s;
+  }
+
+  .add-filter-menu-item:hover {
+    background-color: var(--bg-main);
+    color: var(--accent);
+  }
 
   select, input, button {
     height: 36px; border: 1px solid var(--border-color); border-radius: var(--radius-md);
@@ -535,7 +595,20 @@
       <div class="card">
         <div class="card-header">
           <div class="card-title">Record Details</div>
-          <div style="display: flex; gap: 16px; align-items: center;">
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <button class="btn-sm btn-outline" onclick="triggerReminderCheck()" title="Check and dispatch 1-day prior reminder emails" style="display:flex; align-items:center; gap:6px; color:#d9534f; border-color:#f5c6cb; font-weight:600;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+              <span>🔔 Send 1-Day Reminders</span>
+            </button>
+            <div style="position: relative;">
+              <button id="addFilterBtn" class="btn-sm btn-outline" onclick="toggleAddFilterDropdown(event)" style="display:flex; align-items:center; gap:6px; height:32px; padding:0 12px; font-weight:600;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                <span>+ Add Filter</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+              </button>
+              <div id="addFilterMenu" class="add-filter-menu" style="display:none; position:absolute; right:0; top:calc(100% + 6px); background:var(--card-bg); border:1px solid var(--border-color); border-radius:var(--radius-md); box-shadow:0 8px 24px rgba(0,0,0,0.18); z-index:100; min-width:210px; max-height:300px; overflow-y:auto; padding:6px 0;">
+              </div>
+            </div>
             <button class="btn-sm btn-save" onclick="openOppModal()" style="display:flex; align-items:center; gap:6px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
               Add / Edit Record
@@ -867,39 +940,125 @@ async function confirmClearDataset() {
   }
 }
 
+async function triggerReminderCheck() {
+  try {
+    showToast("Running 1-Day Reminder Alert Scan...", "info");
+    const res = await fetch("/api/reminders/check", { method: "POST" });
+    const result = await res.json();
+    if (!result.success) throw new Error(result.message || "Failed to trigger reminder check");
+    
+    if (result.dispatchedCount > 0) {
+      showToast(`🔔 ${result.dispatchedCount} Reminder Alert(s) Dispatched to kishansukumar2004@gmail.com & nbhargow@gmail.com!`, "success");
+    } else {
+      showToast("ℹ️ Scan Complete: No opportunities matching 1-day prior remind date for today.", "info");
+    }
+  } catch (err) {
+    showToast("Error checking reminders: " + err.message, "danger");
+  }
+}
+
+let activeFilterCols = new Set();
+
+function toggleAddFilterDropdown(e) {
+  if (e) e.stopPropagation();
+  const menu = $('addFilterMenu');
+  if (!menu) return;
+  const isVisible = menu.style.display === 'block';
+  if (isVisible) {
+    menu.style.display = 'none';
+  } else {
+    updateAddFilterMenu();
+    menu.style.display = 'block';
+  }
+}
+
+function updateAddFilterMenu() {
+  const menu = $('addFilterMenu');
+  if (!menu) return;
+
+  const categoryCols = activeSchema.columns.filter(c => c.data_type === 'category' || c.data_type === 'date');
+  const availableCols = categoryCols.filter(c => !activeFilterCols.has(c.column_name));
+
+  if (availableCols.length === 0) {
+    menu.innerHTML = '<div style="padding: 10px 14px; font-size: 12px; color: var(--text-muted); text-align: center;">All available filters active</div>';
+    return;
+  }
+
+  let html = '<div style="padding: 6px 14px 6px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-color); margin-bottom: 4px;">Available Filters</div>';
+  availableCols.forEach(col => {
+    html += `
+      <div class="add-filter-menu-item" onclick="activateFilter('${esc(col.column_name)}')">
+        <span>${esc(col.column_name)}</span>
+        <span class="add-plus" style="font-size: 14px; font-weight: bold; color: var(--accent);">+</span>
+      </div>
+    `;
+  });
+
+  menu.innerHTML = html;
+}
+
+function activateFilter(colName) {
+  activeFilterCols.add(colName);
+  const menu = $('addFilterMenu');
+  if (menu) menu.style.display = 'none';
+  renderDynamicFilters();
+  applyFilters();
+}
+
+function removeFilter(colName) {
+  activeFilterCols.delete(colName);
+  renderDynamicFilters();
+  applyFilters();
+}
+
 function renderDynamicFilters() {
   const container = $('filtersGrid');
   if (!container) return;
 
+  // Save current filter selections before re-rendering
+  const currentValues = {};
+  document.querySelectorAll('#filtersGrid select').forEach(s => {
+    if (s.dataset.col) {
+      currentValues[s.dataset.col] = s.value;
+    }
+  });
+
   const categoryCols = activeSchema.columns.filter(c => c.data_type === 'category' || c.data_type === 'date');
+  const activeColsList = categoryCols.filter(c => activeFilterCols.has(c.column_name));
 
   let html = '';
-  categoryCols.forEach(col => {
+  activeColsList.forEach(col => {
     const colName = col.column_name;
     const safeId = 'filter_' + colName.replace(/[^a-zA-Z0-9]/g, '_');
+    const selectedVal = currentValues[colName] || '';
     
     // Get unique sorted values
     const uniqueVals = [...new Set(allRows.map(r => r[colName]).filter(v => v !== null && v !== undefined && String(v).trim() !== ''))].sort();
 
     html += `
-      <div class="filter-group">
-        <label>${esc(colName)}</label>
+      <div class="filter-group filter-card-active">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <label for="${safeId}">${esc(colName)}</label>
+          <button type="button" class="filter-cross-btn" onclick="removeFilter('${esc(colName)}')" title="Remove filter & move back to dropdown">
+            &times;
+          </button>
+        </div>
         <select id="${safeId}" data-col="${esc(colName)}" onchange="applyFilters()">
           <option value="">All</option>
-          ${uniqueVals.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('')}
+          ${uniqueVals.map(v => `<option value="${esc(v)}"${selectedVal === v ? ' selected' : ''}>${esc(v)}</option>`).join('')}
         </select>
       </div>
     `;
   });
 
   html += `
-    <div class="filter-group" style="flex: 2;">
+    <div class="filter-group" style="flex: 2; min-width: 200px;">
       <label>Global Search</label>
       <input id="globalSearchInput" placeholder="Search dataset..." oninput="applyFilters()">
     </div>
-    <div class="filter-group">
-      <label>&nbsp;</label>
-      <button class="btn-outline" onclick="clearAllFilters()">Clear</button>
+    <div class="filter-group" style="min-width: 90px; flex: 0 0 auto;">
+      <label style="visibility: hidden;">Clear</label>
+      <button class="btn-outline" onclick="clearAllFilters()">Clear All</button>
     </div>
   `;
 
@@ -911,15 +1070,15 @@ function clearAllFilters() {
   if ($('globalSearchInput')) $('globalSearchInput').value = '';
   sortColumn = null;
   sortDirection = 1;
+  activeFilterCols.clear();
+  renderDynamicFilters();
   applyFilters();
 }
 
 function applyFilters() {
-  const categoryCols = activeSchema.columns.filter(c => c.data_type === 'category' || c.data_type === 'date');
   const activeFilters = {};
 
-  categoryCols.forEach(col => {
-    const colName = col.column_name;
+  activeFilterCols.forEach(colName => {
     const safeId = 'filter_' + colName.replace(/[^a-zA-Z0-9]/g, '_');
     const el = $(safeId);
     if (el && el.value) {
@@ -951,6 +1110,14 @@ function applyFilters() {
 
   render();
 }
+
+document.addEventListener('click', function(e) {
+  const menu = $('addFilterMenu');
+  const btn = $('addFilterBtn');
+  if (menu && btn && menu.style.display === 'block' && !menu.contains(e.target) && !btn.contains(e.target)) {
+    menu.style.display = 'none';
+  }
+});
 
 function updateKpis() {
   const grid = $('kpiGrid');
@@ -1483,6 +1650,14 @@ async function loadExcelData() {
     allRows = result.rows || [];
     if (result.schema) {
       activeSchema = result.schema;
+      if (activeSchema && Array.isArray(activeSchema.columns)) {
+        const ownerIdx = activeSchema.columns.findIndex(c => c.column_name.toLowerCase() === 'opportunity owner');
+        if (ownerIdx > 0) {
+          const [ownerCol] = activeSchema.columns.splice(ownerIdx, 1);
+          activeSchema.columns.unshift(ownerCol);
+          activeSchema.columns.forEach((c, i) => c.display_order = i);
+        }
+      }
     }
 
     $('datasetSourceSubtitle').textContent = `Source: ${result.source || 'Dataset'} (${allRows.length} rows)`;

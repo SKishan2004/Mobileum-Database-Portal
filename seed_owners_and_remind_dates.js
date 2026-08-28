@@ -118,6 +118,11 @@ if (supabaseUrl && supabaseKey) {
   const supabase = createClient(supabaseUrl, supabaseKey);
   
   async function syncSupabase() {
+    const { error: probeErr } = await supabase.from('datasets').select('id').limit(1);
+    if (probeErr && (probeErr.message.includes('Unregistered API key') || probeErr.status === 401)) {
+      console.warn('⚠️  Supabase API key is unregistered or invalid. Skipping Supabase sync (local Excel & JSON updated successfully).');
+      return;
+    }
     console.log('Syncing updated data to Supabase...');
     const { data: activeDsList } = await supabase.from('datasets').select('id');
     const targetDatasetIds = (activeDsList && activeDsList.length > 0) ? activeDsList.map(d => d.id) : ['ds_default_1000'];

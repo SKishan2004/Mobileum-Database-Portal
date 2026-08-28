@@ -14,13 +14,36 @@ const { sendChangeNotificationEmail } = require("./emailService");
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-// Supabase setup (with local Excel fallback if missing)
+// Supabase setup (with local Excel fallback if missing or key is unregistered/invalid)
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 
 let supabase = null;
-if (supabaseUrl && supabaseKey) {
-  supabase = createClient(supabaseUrl, supabaseKey);
+
+function handleSupabaseError(err) {
+  if (err && (err.message?.includes("Unregistered API key") || err.message?.includes("Invalid API key") || err.status === 401 || err.status === 403)) {
+    console.warn("⚠️  Supabase API key is invalid or unregistered. Switching server to Local Multi-Dataset Fallback Mode.");
+    supabase = null;
+    return true;
+  }
+  return false;
+}
+
+if (supabaseUrl && supabaseKey && supabaseKey.trim() !== "" && !supabaseKey.includes("YOUR_")) {
+  try {
+    supabase = createClient(supabaseUrl, supabaseKey);
+    // Probe Supabase credentials on boot
+    supabase.from("datasets").select("id").limit(1).then(({ error }) => {
+      if (error && handleSupabaseError(error)) {
+        console.warn("⚠️  Supabase startup probe failed. Local Multi-Dataset Mode activated.");
+      } else if (!error) {
+        console.log(`✅ Supabase connection verified successfully (${supabaseUrl})`);
+      }
+    }).catch(err => handleSupabaseError(err));
+  } catch (e) {
+    console.warn("⚠️  Failed to initialize Supabase client. Running in Local Multi-Dataset Fallback Mode.");
+    supabase = null;
+  }
 } else {
   console.warn("⚠️  SUPABASE_URL or SUPABASE_KEY not found in environment variables.");
   console.warn("📁 Running in Local Multi-Dataset Fallback Mode.");
@@ -529,54 +552,68 @@ app.post("/api/upload", async (req, res) => {
     const datasetId = "ds_" + Date.now();
     const datasetName = filename || `Upload_${new Date().toISOString().split("T")[0]}.xlsx`;
 
+    let uploadedViaSupabase = false;
+
     if (supabase) {
-      // Deactivate existing datasets safely
       try {
-        await supabase.from("datasets").update({ is_active: false }).neq("id", "00000000-0000-0000-0000-000000000000");
-      } catch (dsErr) {
-        console.warn("Dataset deactivation warning:", dsErr.message);
-      }
-
-      // Insert dataset record
-      const { error: dsInsertErr } = await supabase.from("datasets").insert([{
-        id: datasetId,
-        name: datasetName,
-        uploaded_at: new Date().toISOString(),
-        row_count: cleanedRows.length,
-        column_count: inferred.columns.length,
-        primary_key: pkField,
-        is_active: true
-      }]);
-      if (dsInsertErr) {
-        console.error("Dataset insert error:", dsInsertErr.message);
-      }
-
-      // Insert schema
-      const schemaRecords = inferred.columns.map(c => ({
-        dataset_id: datasetId,
-        column_name: c.column_name,
-        data_type: c.data_type,
-        is_primary_key: c.is_primary_key,
-        display_order: c.display_order
-      }));
-      await supabase.from("dataset_schema").insert(schemaRecords);
-
-      // Insert rows
-      const records = cleanedRows.map(row => ({
-        dataset_id: datasetId,
-        data: row
-      }));
-
-      const batchSize = 100;
-      for (let i = 0; i < records.length; i += batchSize) {
-        const batch = records.slice(i, i + batchSize);
-        const { error: batchErr } = await supabase.from("renewals").insert(batch);
-        if (batchErr) {
-          console.error("Batch upload error:", batchErr.message);
-          throw batchErr;
+        // Deactivate existing datasets safely
+        try {
+          await supabase.from("datasets").update({ is_active: false }).neq("id", "00000000-0000-0000-0000-000000000000");
+        } catch (dsErr) {
+          console.warn("Dataset deactivation warning:", dsErr.message);
         }
+
+        // Insert dataset record
+        const { error: dsInsertErr } = await supabase.from("datasets").insert([{
+          id: datasetId,
+          name: datasetName,
+          uploaded_at: new Date().toISOString(),
+          row_count: cleanedRows.length,
+          column_count: inferred.columns.length,
+          primary_key: pkField,
+          is_active: true
+        }]);
+        if (dsInsertErr) {
+          if (handleSupabaseError(dsInsertErr)) throw dsInsertErr;
+          console.error("Dataset insert error:", dsInsertErr.message);
+        }
+
+        // Insert schema
+        const schemaRecords = inferred.columns.map(c => ({
+          dataset_id: datasetId,
+          column_name: c.column_name,
+          data_type: c.data_type,
+          is_primary_key: c.is_primary_key,
+          display_order: c.display_order
+        }));
+        const { error: schemaErr } = await supabase.from("dataset_schema").insert(schemaRecords);
+        if (schemaErr && handleSupabaseError(schemaErr)) throw schemaErr;
+
+        // Insert rows
+        const records = cleanedRows.map(row => ({
+          dataset_id: datasetId,
+          data: row
+        }));
+
+        const batchSize = 100;
+        for (let i = 0; i < records.length; i += batchSize) {
+          const batch = records.slice(i, i + batchSize);
+          const { error: batchErr } = await supabase.from("renewals").insert(batch);
+          if (batchErr) {
+            if (handleSupabaseError(batchErr)) throw batchErr;
+            console.error("Batch upload error:", batchErr.message);
+            throw batchErr;
+          }
+        }
+        uploadedViaSupabase = true;
+      } catch (err) {
+        console.warn("⚠️  Supabase upload failed, auto-falling back to Local Dataset Mode:", err.message);
+        handleSupabaseError(err);
+        uploadedViaSupabase = false;
       }
-    } else {
+    }
+
+    if (!uploadedViaSupabase) {
       let datasets = getLocalDatasets();
       datasets.forEach(d => d.is_active = false);
 

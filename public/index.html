@@ -522,6 +522,10 @@
         <div class="subtitle" id="datasetSourceSubtitle">Source: Local Excel File</div>
       </div>
       <div class="header-right" style="display:flex; gap:12px; align-items:center;">
+        <button class="btn-sm btn-outline" onclick="focusGlobalSearch()" style="display:flex; align-items:center; gap:6px; background:#1e293b; border:1px solid #334155; color:#38bdf8; font-weight:600;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          Global Search
+        </button>
         <button class="btn-sm btn-save" onclick="openUploadModal()" style="display:flex; align-items:center; gap:6px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
           Upload Dataset
@@ -593,20 +597,26 @@
     <!-- Details Tab -->
     <div id="details" class="tab-content">
       <div class="card">
-        <div class="card-header">
-          <div class="card-title">Record Details</div>
-          <div style="display: flex; gap: 12px; align-items: center;">
-            <button class="btn-sm btn-outline" onclick="triggerReminderCheck()" title="Check and dispatch 1-day prior reminder emails" style="display:flex; align-items:center; gap:6px; color:#d9534f; border-color:#f5c6cb; font-weight:600;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-              <span>🔔 Send 1-Day Reminders</span>
-            </button>
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+            <div class="card-title">Record Details</div>
+            
+            <!-- Global Search Bar near Record Details -->
+            <div style="position:relative; width:280px;">
+              <input id="globalSearchInput" placeholder="🔍 Global Search dataset..." oninput="applyFilters()" style="width:100%; height:34px; font-size:12px; padding:0 28px 0 32px; border-radius:6px; border:1px solid #cbd5e1; background:#ffffff; color:#0f172a; outline:none; transition:all 0.2s;" onfocus="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 3px rgba(37,99,235,0.15)'" onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none'">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" style="position:absolute; left:10px; top:10px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <button onclick="clearGlobalSearch()" title="Clear search" style="position:absolute; right:8px; top:7px; background:transparent; border:none; color:#94a3b8; cursor:pointer; font-size:16px; display:none; line-height:1;" id="btnClearGlobalSearch">&times;</button>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap:wrap;">
             <div style="position: relative;">
               <button id="addFilterBtn" class="btn-sm btn-outline" onclick="toggleAddFilterDropdown(event)" style="display:flex; align-items:center; gap:6px; height:32px; padding:0 12px; font-weight:600;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                 <span>+ Add Filter</span>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
               </button>
-              <div id="addFilterMenu" class="add-filter-menu" style="display:none; position:absolute; right:0; top:calc(100% + 6px); background:var(--card-bg); border:1px solid var(--border-color); border-radius:var(--radius-md); box-shadow:0 8px 24px rgba(0,0,0,0.18); z-index:100; min-width:210px; max-height:300px; overflow-y:auto; padding:6px 0;">
+              <div id="addFilterMenu" class="add-filter-menu" style="display:none; position:absolute; right:0; top:calc(100% + 6px); background:var(--card-bg); border:1px solid var(--border-color); border-radius:var(--radius-md); box-shadow:0 10px 25px rgba(0,0,0,0.2); z-index:100; min-width:240px; max-height:340px; flex-direction:column; overflow:hidden; padding:0;" onclick="event.stopPropagation();">
               </div>
             </div>
             <button class="btn-sm btn-save" onclick="openOppModal()" style="display:flex; align-items:center; gap:6px;">
@@ -959,17 +969,19 @@ async function triggerReminderCheck() {
 }
 
 let activeFilterCols = new Set();
+let tempSelectedFilterCols = new Set();
 
 function toggleAddFilterDropdown(e) {
   if (e) e.stopPropagation();
   const menu = $('addFilterMenu');
   if (!menu) return;
-  const isVisible = menu.style.display === 'block';
+  const isVisible = menu.style.display !== 'none' && menu.style.display !== '';
   if (isVisible) {
     menu.style.display = 'none';
   } else {
+    tempSelectedFilterCols = new Set(activeFilterCols);
     updateAddFilterMenu();
-    menu.style.display = 'block';
+    menu.style.display = 'flex';
   }
 }
 
@@ -978,30 +990,71 @@ function updateAddFilterMenu() {
   if (!menu) return;
 
   const categoryCols = activeSchema.columns.filter(c => c.data_type === 'category' || c.data_type === 'date');
-  const availableCols = categoryCols.filter(c => !activeFilterCols.has(c.column_name));
 
-  if (availableCols.length === 0) {
-    menu.innerHTML = '<div style="padding: 10px 14px; font-size: 12px; color: var(--text-muted); text-align: center;">All available filters active</div>';
+  if (categoryCols.length === 0) {
+    menu.innerHTML = '<div style="padding: 16px; font-size: 12px; color: var(--text-muted); text-align: center;">No filterable columns available</div>';
     return;
   }
 
-  let html = '<div style="padding: 6px 14px 6px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-color); margin-bottom: 4px;">Available Filters</div>';
-  availableCols.forEach(col => {
-    html += `
-      <div class="add-filter-menu-item" onclick="activateFilter('${esc(col.column_name)}')">
-        <span>${esc(col.column_name)}</span>
-        <span class="add-plus" style="font-size: 14px; font-weight: bold; color: var(--accent);">+</span>
+  let itemsHtml = '';
+  categoryCols.forEach(col => {
+    const colName = col.column_name;
+    const isChecked = tempSelectedFilterCols.has(colName);
+    itemsHtml += `
+      <div class="add-filter-menu-item" onclick="toggleTempFilter('${esc(colName)}', event)" style="padding: 8px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; background:${isChecked ? '#e0f2fe' : 'transparent'};">
+        <div style="display:flex; align-items:center; gap:10px; flex:1; overflow:hidden;">
+          <input type="checkbox" ${isChecked ? 'checked' : ''} style="width:16px; height:16px; accent-color:#2563eb; cursor:pointer;" onclick="event.stopPropagation(); toggleTempFilter('${esc(colName)}', event);">
+          <span style="font-size:12px; color:var(--primary); font-weight:${isChecked ? '600' : '400'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(colName)}</span>
+        </div>
+        <span style="font-size:10px; font-weight:600; color:var(--text-muted); text-transform:uppercase;">${col.data_type}</span>
       </div>
     `;
   });
 
-  menu.innerHTML = html;
+  const selectedCount = tempSelectedFilterCols.size;
+
+  menu.innerHTML = `
+    <div style="padding: 8px 12px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-color); background:var(--bg-main); display:flex; justify-content:space-between; align-items:center;">
+      <span>Available Filters</span>
+      <span style="font-size:11px; font-weight:700; color:#2563eb;">${selectedCount} selected</span>
+    </div>
+    <div style="flex:1; overflow-y:auto; max-height:210px; padding:2px 0;" onclick="event.stopPropagation();">
+      ${itemsHtml}
+    </div>
+    <div style="padding: 8px 12px; border-top: 1px solid var(--border-color); background: var(--bg-main); display:flex; justify-content:space-between; align-items:center; gap:8px;" onclick="event.stopPropagation();">
+      <button type="button" class="btn-sm btn-outline" style="height:28px; padding:0 10px; font-size:11px; font-weight:600;" onclick="clearTempFilters(event)">Select None</button>
+      <button type="button" class="btn-sm btn-save" style="height:28px; padding:0 16px; font-size:12px; font-weight:600; background:#2563eb; color:#fff;" onclick="applyAddFilterSelection(event)">Done</button>
+    </div>
+  `;
+}
+
+function toggleTempFilter(colName, event) {
+  if (event) event.stopPropagation();
+  if (tempSelectedFilterCols.has(colName)) {
+    tempSelectedFilterCols.delete(colName);
+  } else {
+    tempSelectedFilterCols.add(colName);
+  }
+  updateAddFilterMenu();
+}
+
+function clearTempFilters(event) {
+  if (event) event.stopPropagation();
+  tempSelectedFilterCols.clear();
+  updateAddFilterMenu();
+}
+
+function applyAddFilterSelection(event) {
+  if (event) event.stopPropagation();
+  activeFilterCols = new Set(tempSelectedFilterCols);
+  const menu = $('addFilterMenu');
+  if (menu) menu.style.display = 'none';
+  renderDynamicFilters();
+  applyFilters();
 }
 
 function activateFilter(colName) {
   activeFilterCols.add(colName);
-  const menu = $('addFilterMenu');
-  if (menu) menu.style.display = 'none';
   renderDynamicFilters();
   applyFilters();
 }
@@ -1052,23 +1105,40 @@ function renderDynamicFilters() {
     `;
   });
 
-  html += `
-    <div class="filter-group" style="flex: 2; min-width: 200px;">
-      <label>Global Search</label>
-      <input id="globalSearchInput" placeholder="Search dataset..." oninput="applyFilters()">
-    </div>
-    <div class="filter-group" style="min-width: 90px; flex: 0 0 auto;">
-      <label style="visibility: hidden;">Clear</label>
-      <button class="btn-outline" onclick="clearAllFilters()">Clear All</button>
-    </div>
-  `;
+  if (activeColsList.length > 0) {
+    html += `
+      <div class="filter-group" style="min-width: 90px; flex: 0 0 auto; margin-left: auto;">
+        <label style="visibility: hidden;">Clear</label>
+        <button class="btn-outline" onclick="clearAllFilters()">Clear Filters</button>
+      </div>
+    `;
+  }
 
   container.innerHTML = html;
+}
+
+function focusGlobalSearch() {
+  switchTab('details');
+  const input = $('globalSearchInput');
+  if (input) {
+    input.focus();
+    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+function clearGlobalSearch() {
+  const input = $('globalSearchInput');
+  if (input) input.value = '';
+  const clearBtn = $('btnClearGlobalSearch');
+  if (clearBtn) clearBtn.style.display = 'none';
+  applyFilters();
 }
 
 function clearAllFilters() {
   document.querySelectorAll('#filtersGrid select').forEach(s => s.value = '');
   if ($('globalSearchInput')) $('globalSearchInput').value = '';
+  const clearBtn = $('btnClearGlobalSearch');
+  if (clearBtn) clearBtn.style.display = 'none';
   sortColumn = null;
   sortDirection = 1;
   activeFilterCols.clear();
@@ -1088,6 +1158,10 @@ function applyFilters() {
   });
 
   const searchQ = $('globalSearchInput') ? $('globalSearchInput').value.trim().toLowerCase() : '';
+  const btnClearSearch = $('btnClearGlobalSearch');
+  if (btnClearSearch) {
+    btnClearSearch.style.display = searchQ ? 'block' : 'none';
+  }
 
   rows = allRows.filter(r => {
     for (const [col, val] of Object.entries(activeFilters)) {
@@ -1110,13 +1184,17 @@ function applyFilters() {
   }
 
   render();
+  saveCurrentDatasetState();
 }
 
 document.addEventListener('click', function(e) {
   const menu = $('addFilterMenu');
   const btn = $('addFilterBtn');
-  if (menu && btn && menu.style.display === 'block' && !menu.contains(e.target) && !btn.contains(e.target)) {
+  if (menu && btn && menu.style.display !== 'none' && menu.style.display !== '' && !menu.contains(e.target) && !btn.contains(e.target)) {
+    activeFilterCols = new Set(tempSelectedFilterCols);
     menu.style.display = 'none';
+    renderDynamicFilters();
+    applyFilters();
   }
 });
 
@@ -1218,6 +1296,9 @@ function renderTable() {
       } else if (type === 'date') {
         let dStr = rawVal;
         if (rawVal instanceof Date) dStr = rawVal.toISOString().split('T')[0];
+        else if (typeof rawVal === 'string' && /^\d{4}-\d{2}-\d{2}/.test(rawVal.trim())) {
+          dStr = rawVal.trim().substring(0, 10);
+        }
         rowHtml += `<td>${esc(dStr || '—')}</td>`;
       } else if (c.is_primary_key) {
         rowHtml += `<td><strong>${esc(rawVal || '—')}</strong></td>`;
@@ -1642,6 +1723,89 @@ async function submitOpp(event) {
   }
 }
 
+let currentDatasetId = null;
+
+function saveCurrentDatasetState() {
+  if (!currentDatasetId) return;
+
+  const currentValues = {};
+  activeFilterCols.forEach(colName => {
+    const safeId = 'filter_' + colName.replace(/[^a-zA-Z0-9]/g, '_');
+    const el = $(safeId);
+    if (el && el.value) {
+      currentValues[colName] = el.value;
+    }
+  });
+
+  const state = {
+    activeFilterCols: Array.from(activeFilterCols),
+    filterValues: currentValues,
+    globalSearch: $('globalSearchInput') ? $('globalSearchInput').value : '',
+    sortColumn: sortColumn,
+    sortDirection: sortDirection
+  };
+
+  try {
+    localStorage.setItem('dataset_state_' + currentDatasetId, JSON.stringify(state));
+  } catch (e) {
+    console.warn('LocalStorage save error:', e);
+  }
+}
+
+function restoreDatasetState(datasetId) {
+  if (!datasetId) return;
+  currentDatasetId = datasetId;
+
+  try {
+    const savedRaw = localStorage.getItem('dataset_state_' + datasetId);
+    if (!savedRaw) {
+      activeFilterCols.clear();
+      if ($('globalSearchInput')) $('globalSearchInput').value = '';
+      sortColumn = null;
+      sortDirection = 1;
+      renderDynamicFilters();
+      applyFilters();
+      return;
+    }
+
+    const state = JSON.parse(savedRaw);
+
+    activeFilterCols.clear();
+    if (activeSchema && Array.isArray(activeSchema.columns) && Array.isArray(state.activeFilterCols)) {
+      const validCols = new Set(activeSchema.columns.map(c => c.column_name));
+      state.activeFilterCols.forEach(col => {
+        if (validCols.has(col)) {
+          activeFilterCols.add(col);
+        }
+      });
+    }
+
+    renderDynamicFilters();
+
+    if (state.filterValues) {
+      for (const [colName, val] of Object.entries(state.filterValues)) {
+        const safeId = 'filter_' + colName.replace(/[^a-zA-Z0-9]/g, '_');
+        const el = $(safeId);
+        if (el) {
+          el.value = val;
+        }
+      }
+    }
+
+    if ($('globalSearchInput')) {
+      $('globalSearchInput').value = state.globalSearch || '';
+    }
+    sortColumn = state.sortColumn || null;
+    sortDirection = state.sortDirection || 1;
+
+    applyFilters();
+  } catch (e) {
+    console.error('Error restoring dataset state:', e);
+    renderDynamicFilters();
+    applyFilters();
+  }
+}
+
 async function loadExcelData() {
   try {
     const response = await fetch("/api/data", { cache: "no-store" });
@@ -1663,21 +1827,14 @@ async function loadExcelData() {
 
     $('datasetSourceSubtitle').textContent = `Source: ${result.source || 'Dataset'} (${allRows.length} rows)`;
 
-    // Clean up active filter columns that do not exist in the new dataset schema
-    if (activeSchema && Array.isArray(activeSchema.columns)) {
-      const validCols = new Set(activeSchema.columns.map(c => c.column_name));
-      for (const col of Array.from(activeFilterCols)) {
-        if (!validCols.has(col)) {
-          activeFilterCols.delete(col);
-        }
-      }
-    } else {
-      activeFilterCols.clear();
-    }
-
-    renderDynamicFilters();
     updateChartDropdowns();
-    applyFilters();
+
+    if (result.datasetId) {
+      restoreDatasetState(result.datasetId);
+    } else {
+      renderDynamicFilters();
+      applyFilters();
+    }
 
     if ($('search-tab') && $('search-tab').classList.contains('active')) {
       renderSearchTab();
@@ -1854,6 +2011,7 @@ async function renderHistoryTab() {
 
 async function activateDataset(datasetId) {
   try {
+    saveCurrentDatasetState();
     const res = await fetch(`/api/datasets/${datasetId}/activate`, { method: 'POST' });
     const result = await res.json();
     if (!result.success) throw new Error(result.message);
@@ -1872,6 +2030,7 @@ async function deleteDatasetHistory(datasetId, datasetName) {
   if (!confirmed) return;
 
   try {
+    try { localStorage.removeItem('dataset_state_' + datasetId); } catch(e){}
     const res = await fetch(`/api/datasets/${datasetId}`, { method: 'DELETE' });
     const result = await res.json();
     if (!result.success) throw new Error(result.message);

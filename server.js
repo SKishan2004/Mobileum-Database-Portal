@@ -642,6 +642,13 @@ app.post("/api/upload", async (req, res) => {
       created_at: new Date().toISOString()
     });
 
+    sendChangeNotificationEmail({
+      recordName: datasetName,
+      recordData: { 'Total Rows': cleanedRows.length, 'Primary Key': pkField, 'Columns': inferred.columns.map(c=>c.column_name).join(', ') },
+      changes: null,
+      action: "Uploaded"
+    }).catch(err => console.error("Error sending upload change email alert:", err.message));
+
     broadcastEvent({
       action: "Uploaded",
       recordName: datasetName,
@@ -761,6 +768,8 @@ app.get("/api/data", async (req, res) => {
 
     res.json({
       success: true,
+      datasetId: activeDs.id,
+      datasetName: activeDs.name || 'Dataset',
       source: supabase ? `Supabase DB (${activeDs.name})` : `Local File (${activeDs.name || 'Dataset'})`,
       sheet: "Renewals",
       lastModified: activeDs.uploaded_at || new Date().toISOString(),
@@ -918,7 +927,7 @@ app.post("/api/data", async (req, res) => {
     }
 
     let datasets = getLocalDatasets();
-    const target = datasets.find(d => d.id === (activeDs ? activeDs.id : ''));
+    const target = datasets.find(d => d.id === (activeDs ? activeDs.id : '')) || datasets.find(d => d.is_active) || datasets[0];
     if (target) {
       const existingIndex = target.rows.findIndex(
         (r) => String(r[pkField]).trim() === primaryKeyValue

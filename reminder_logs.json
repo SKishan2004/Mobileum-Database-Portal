@@ -1,5 +1,170 @@
 [
   {
+    "id": "rem_1788002582021_ew4u",
+    "opportunityId": "Nokia Mobility Renewal - Europe 0975",
+    "opportunityName": "Nokia Mobility Renewal - Europe 0975",
+    "owner": "Benjamin Martin",
+    "remindDate": "2026-08-30",
+    "sentDate": "2026-08-29",
+    "timestamp": "2026-08-29T11:23:02.021Z",
+    "recipients": [
+      "kishansukumar2004@gmail.com",
+      "nbhargow@gmail.com"
+    ],
+    "status": "DELIVERED",
+    "details": ""
+  },
+  {
+    "id": "rem_1788002577077_hd04",
+    "opportunityId": "Verizon Fraud Management Renewal - MENA 0926",
+    "opportunityName": "Verizon Fraud Management Renewal - MENA 0926",
+    "owner": "Abigail Allen",
+    "remindDate": "2026-08-30",
+    "sentDate": "2026-08-29",
+    "timestamp": "2026-08-29T11:22:57.077Z",
+    "recipients": [
+      "kishansukumar2004@gmail.com",
+      "nbhargow@gmail.com"
+    ],
+    "status": "DELIVERED",
+    "details": ""
+  },
+  {
+    "id": "rem_1788002572260_onqp",
+    "opportunityId": "Ooredoo Digital Transformation Renewal - APAC 0652",
+    "opportunityName": "Ooredoo Digital Transformation Renewal - APAC 0652",
+    "owner": "Harper Lewis",
+    "remindDate": "2026-08-29",
+    "sentDate": "2026-08-29",
+    "timestamp": "2026-08-29T11:22:52.260Z",
+    "recipients": [
+      "kishansukumar2004@gmail.com",
+      "nbhargow@gmail.com"
+    ],
+    "status": "DELIVERED",
+    "details": ""
+  },
+  {
+    "id": "rem_1788002567159_ctjc",
+    "opportunityId": "MTN Digital Transformation Renewal - Europe 0611",
+    "opportunityName": "MTN Digital Transformation Renewal - Europe 0611",
+    "owner": "Robert Anderson",
+    "remindDate": "2026-08-30",
+    "sentDate": "2026-08-29",
+    "timestamp": "2026-08-29T11:22:47.159Z",
+    "recipients": [
+      "kishansukumar2004@gmail.com",
+      "nbhargow@gmail.com"
+    ],
+    "status": "DELIVERED",
+    "details": ""
+  },
+  {
+    "id": "rem_1788002561949_g123",
+    "opportunityId": "Etisalat Enterprise Analytics Renewal - MENA 0088",
+    "opportunityName": "Etisalat Enterprise Analytics Renewal - MENA 0088",
+    "owner": "Ella Hernandez",
+    "remindDate": "2026-08-29",
+    "sentDate": "2026-08-29",
+    "timestamp": "2026-08-29T11:22:41.949Z",
+    "recipients": [
+      "kishansukumar2004@gmail.com",
+      "nbhargow@gmail.com"
+    ],
+    "status": "DELIVERED",
+    "details": ""
+  },
+  {
+    "id": "rem_1788002556517_adxa",
+    "opportunityId": "MTN Network Monitoring Renewal - AFRICA 0039",
+    "opportunityName": "MTN Network Monitoring Renewal - AFRICA 0039",
+    "owner": "Daniel Taylor",
+    "remindDate": "2026-08-30",
+    "sentDate": "2026-08-29",
+    "timestamp": "2026-08-29T11:22:36.517Z",
+    "recipients": [
+      "kishansukumar2004@gmail.com",
+      "nbhargow@gmail.com"
+    ],
+    "status": "DELIVERED",
+    "details": ""
+  },
+  {
+    "id": "rem_1788002552782_i4uw",
+    "opportunityId": "BT Fraud Management Renewal - Europe 0005",
+    "opportunityName": "BT Fraud Management Renewal - Europe 0005",
+    "owner": "David Miller",
+    "remindDate": "2026-08-30",
+    "sentDate": "2026-08-29",
+    "timestamp": "2026-08-29T11:22:32.782Z",
+    "recipients": [
+      "kishansukumar2004@gmail.com",
+      "nbhargow@gmail.com"
+    ],
+    "status": "DELIVERED",
+    "details": ""
+  },
+  {
+    "id": "rem_1788002549057_dgqs",
+    "opportunityId": "Vodafone Customer Intelligence Renewal - NAMR 0004",
+    "opportunityName": "Vodafone Customer Intelligence Renewal - NAMR 0004",
+    "owner": "Emily Davis",
+    "remindDate": "2026-08-30",
+    "sentDate": "2026-08-29",
+    "timestamp": "2026-08-29T11:22:29.057Z",
+    "recipients": [
+      "kishansukumar2004@gmail.com",
+      "nbhargow@gmail.com"
+    ],
+    "status": "DELIVERED",
+    "details": ""
+  },
+  {
+    "id": "rem_1788002545074_stkj",
+    "opportunityId": "Etisalat Cloud Services Renewal - Europe 0003",
+    "opportunityName": "Etisalat Cloud Services Renewal - Europe 0003",
+    "owner": "Michael Chang",
+    "remindDate": "2026-08-30",
+    "sentDate": "2026-08-29",
+    "timestamp": "2026-08-29T11:22:25.074Z",
+    "recipients": [
+      "kishansukumar2004@gmail.com",
+      "nbhargow@gmail.com"
+    ],
+    "status": "DELIVERED",
+    "details": ""
+  },
+  {
+    "id": "rem_1788002540360_x8ra",
+    "opportunityId": "Claro Fraud Management Renewal - NAMR 0002",
+    "opportunityName": "Claro Fraud Management Renewal - NAMR 0002",
+    "owner": "Sarah Jenkins",
+    "remindDate": "2026-08-30",
+    "sentDate": "2026-08-29",
+    "timestamp": "2026-08-29T11:22:20.360Z",
+    "recipients": [
+      "kishansukumar2004@gmail.com",
+      "nbhargow@gmail.com"
+    ],
+    "status": "DELIVERED",
+    "details": ""
+  },
+  {
+    "id": "rem_1788002535293_5ozl",
+    "opportunityId": "Telefonica Charging Platform Renewal - AFRICA 0001",
+    "opportunityName": "Telefonica Charging Platform Renewal - AFRICA 0001",
+    "owner": "Alexander Wright",
+    "remindDate": "2026-08-30",
+    "sentDate": "2026-08-29",
+    "timestamp": "2026-08-29T11:22:15.293Z",
+    "recipients": [
+      "kishansukumar2004@gmail.com",
+      "nbhargow@gmail.com"
+    ],
+    "status": "DELIVERED",
+    "details": ""
+  },
+  {
     "id": "rem_1787899738822_uvf2",
     "opportunityId": "Claro Network Optimization Renewal - APAC 0965",
     "opportunityName": "Claro Network Optimization Renewal - APAC 0965",

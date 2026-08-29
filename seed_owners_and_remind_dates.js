@@ -46,20 +46,38 @@ const updatedRows = rows.map((row, index) => {
   
   // Calculate or generate Customer Remind Date
   let remindDate = '';
-  const refDateStr = row['Close Date'] || row['Service End Date'] || row['Service Expiry date'];
-  if (refDateStr) {
-    const refDate = new Date(refDateStr);
-    if (!isNaN(refDate.getTime())) {
-      const offsetDays = Math.floor(Math.random() * 30) + 15; // 15 to 45 days prior
-      const rDate = new Date(refDate.getTime() - offsetDays * 24 * 60 * 60 * 1000);
-      const y = rDate.getFullYear();
-      const m = String(rDate.getMonth() + 1).padStart(2, '0');
-      const d = String(rDate.getDate()).padStart(2, '0');
-      remindDate = `${y}-${m}-${d}`;
+  if (index < 5) {
+    // Tomorrow's date for 1-day prior notification testing (2026-08-30)
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const y = tomorrow.getFullYear();
+    const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
+    const d = String(tomorrow.getDate()).padStart(2, '0');
+    remindDate = `${y}-${m}-${d}`;
+  } else if (index < 20) {
+    // Next 2-7 days for upcoming reminders
+    const future = new Date();
+    future.setDate(future.getDate() + (index % 6) + 2);
+    const y = future.getFullYear();
+    const m = String(future.getMonth() + 1).padStart(2, '0');
+    const d = String(future.getDate()).padStart(2, '0');
+    remindDate = `${y}-${m}-${d}`;
+  } else {
+    const refDateStr = row['Close Date'] || row['Service End Date'] || row['Service Expiry date'];
+    if (refDateStr) {
+      const refDate = new Date(refDateStr);
+      if (!isNaN(refDate.getTime())) {
+        const offsetDays = Math.floor(Math.random() * 30) + 15; // 15 to 45 days prior
+        const rDate = new Date(refDate.getTime() - offsetDays * 24 * 60 * 60 * 1000);
+        const y = rDate.getFullYear();
+        const m = String(rDate.getMonth() + 1).padStart(2, '0');
+        const d = String(rDate.getDate()).padStart(2, '0');
+        remindDate = `${y}-${m}-${d}`;
+      }
     }
-  }
-  if (!remindDate) {
-    remindDate = getRandomDate(2025, 2026);
+    if (!remindDate) {
+      remindDate = getRandomDate(2025, 2026);
+    }
   }
 
   const newRow = {
@@ -95,16 +113,102 @@ if (fs.existsSync(expandedFile)) {
   console.log('Updated expanded file:', expandedFile);
 }
 
-// 2. Update local_datasets.json if present
+// Helper to infer schema
+function inferSchema(rowsList, requestedPrimaryKey) {
+  if (!rowsList || rowsList.length === 0) return { primaryKey: 'ID', columns: [] };
+  const rawHeaders = Object.keys(rowsList[0]);
+  const cleanColumns = rawHeaders.map((h, i) => String(h || '').trim() || `Column_${i + 1}`);
+  const columns = [];
+  const typeMap = {};
+
+  cleanColumns.forEach((col) => {
+    const nonEmptyVals = rowsList.map(r => r[col]).filter(v => v !== null && v !== undefined && String(v).trim() !== '');
+    let dataType = 'text';
+    if (nonEmptyVals.length > 0) {
+      const isDate = nonEmptyVals.every(v => {
+        if (v instanceof Date) return !isNaN(v.getTime());
+        const str = String(v).trim();
+        if (str.length < 6) return false;
+        if (/^\d{4}-\d{2}-\d{2}/.test(str) || /^\d{1,2}\/\d{1,2}\/\d{2,4}/.test(str)) return true;
+        return !isNaN(Date.parse(str));
+      });
+      if (isDate) {
+        dataType = 'date';
+      } else {
+        const isNumeric = nonEmptyVals.every(v => {
+          const cleanStr = String(v).replace(/[$€£₹,]/g, '').trim();
+          return cleanStr !== '' && !isNaN(Number(cleanStr));
+        });
+        if (isNumeric) {
+          const colLower = col.toLowerCase();
+          const isCurrencyName = /amount|tcv|acv|revenue|price|cost|val|fee|budget|\(\$\)/i.test(colLower);
+          const hasCurrencySymbol = nonEmptyVals.some(v => /[$€£₹]/.test(String(v)));
+          dataType = (isCurrencyName || hasCurrencySymbol) ? 'currency' : 'number';
+        } else {
+          const uniqueVals = new Set(nonEmptyVals.map(v => String(v).trim()));
+          if (uniqueVals.size <= 35 && uniqueVals.size > 0) {
+            dataType = 'category';
+          } else {
+            dataType = 'text';
+          }
+        }
+      }
+    }
+    typeMap[col] = dataType;
+  });
+
+  let primaryKey = requestedPrimaryKey || 'Opportunity Name';
+  if (!cleanColumns.includes(primaryKey)) primaryKey = cleanColumns[0];
+
+  cleanColumns.forEach((col, idx) => {
+    columns.push({
+      column_name: col,
+      data_type: typeMap[col],
+      is_primary_key: col === primaryKey,
+      display_order: idx
+    });
+  });
+
+  return { primaryKey, columns };
+}
+
+// 2. Update local_datasets.json cleanly
 const datasetsFile = path.join(__dirname, 'local_datasets.json');
 if (fs.existsSync(datasetsFile)) {
   try {
-    const localData = JSON.parse(fs.readFileSync(datasetsFile, 'utf-8'));
-    if (Array.isArray(localData) && localData.length > 0) {
-      localData[0].rows = updatedRows;
-      fs.writeFileSync(datasetsFile, JSON.stringify(localData, null, 2));
-      console.log('Updated local_datasets.json');
+    const schema = inferSchema(updatedRows, 'Opportunity Name');
+    const defaultDataset = {
+      id: 'ds_default_1000',
+      name: 'Renewal_Opportunity_1000_Realistic.xlsx',
+      uploaded_at: new Date().toISOString(),
+      row_count: updatedRows.length,
+      column_count: schema.columns.length,
+      primary_key: schema.primaryKey,
+      is_active: true,
+      schema: schema,
+      rows: updatedRows
+    };
+
+    let localData = [];
+    try {
+      localData = JSON.parse(fs.readFileSync(datasetsFile, 'utf-8'));
+    } catch(e) {}
+
+    if (!Array.isArray(localData)) localData = [];
+
+    // Replace or unshift dataset_1000
+    const existingIdx = localData.findIndex(d => d.id === 'ds_default_1000' || d.name.includes('Renewal_Opportunity'));
+    if (existingIdx !== -1) {
+      localData[existingIdx] = defaultDataset;
+    } else {
+      localData.unshift(defaultDataset);
     }
+
+    // Set defaultDataset as active, others as inactive
+    localData.forEach(d => d.is_active = (d.id === defaultDataset.id));
+
+    fs.writeFileSync(datasetsFile, JSON.stringify(localData, null, 2));
+    console.log('Successfully updated local_datasets.json with clean schema and active status.');
   } catch (e) {
     console.error('Error updating local_datasets.json:', e);
   }

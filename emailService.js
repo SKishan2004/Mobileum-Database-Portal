@@ -115,30 +115,55 @@ function buildEmailHtml(opp, daysRemaining = 1) {
 
 function buildChangeEmailHtml(recordName, recordData, changes, action = 'Updated') {
   const oppName = recordName || recordData['Opportunity Name'] || 'Unnamed Record';
-  const owner = recordData['Opportunity Owner'] || 'N/A';
-  const remindDate = recordData['Customer Remind Date'] || 'N/A';
+  const owner = recordData['Opportunity Owner'] || 'Unassigned';
   const accountName = recordData['Account Name'] || recordData['Customer Name'] || 'N/A';
+  const timestamp = new Date().toLocaleString('en-US', { timeZoneName: 'short' });
 
   let changesTableHtml = '';
   if (changes && Object.keys(changes).length > 0) {
     changesTableHtml = `
+      <div style="margin-top:16px; margin-bottom:8px; font-weight:700; font-size:13px; color:#1e293b;">Modified Fields & Exact Changes:</div>
       <table class="info-grid">
-        <tr style="background:#edf2f7; font-weight:bold;">
-          <td style="width:30%;">Field Changed</td>
-          <td style="width:35%; color:#718096;">Previous Value</td>
-          <td style="width:35%; color:#2b6cb0;">Updated Value</td>
-        </tr>
-        ${Object.entries(changes).map(([col, diff]) => `
-          <tr>
-            <td class="label">${col}</td>
-            <td style="color:#718096; text-decoration:line-through;">${String(diff.old ?? '—')}</td>
-            <td style="color:#2b6cb0; font-weight:600;">${String(diff.new ?? '—')}</td>
+        <thead>
+          <tr style="background:#0f172a; color:#ffffff; font-weight:700;">
+            <th style="padding:10px 12px; text-align:left; width:30%;">Field Modified</th>
+            <th style="padding:10px 12px; text-align:left; width:35%; color:#f87171;">Previous Value (Before)</th>
+            <th style="padding:10px 12px; text-align:left; width:35%; color:#34d399;">New Value (After)</th>
           </tr>
-        `).join('')}
+        </thead>
+        <tbody>
+          ${Object.entries(changes).map(([col, diff]) => `
+            <tr>
+              <td class="label"><strong>${col}</strong></td>
+              <td style="color:#991b1b; background:#fee2e2; padding:8px 12px; font-family:monospace; text-decoration:line-through;">${String(diff.old ?? '—')}</td>
+              <td style="color:#065f46; background:#dcfce7; padding:8px 12px; font-weight:bold; font-family:monospace;">${String(diff.new ?? '—')}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } else if (action === 'Added' && recordData && Object.keys(recordData).length > 0) {
+    changesTableHtml = `
+      <div style="margin-top:16px; margin-bottom:8px; font-weight:700; font-size:13px; color:#1e293b;">New Record Attributes:</div>
+      <table class="info-grid">
+        <thead>
+          <tr style="background:#0f172a; color:#ffffff; font-weight:700;">
+            <th style="padding:10px 12px; text-align:left; width:40%;">Field Name</th>
+            <th style="padding:10px 12px; text-align:left; width:60%;">Initial Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${Object.entries(recordData).slice(0, 15).map(([col, val]) => `
+            <tr>
+              <td class="label">${col}</td>
+              <td style="font-weight:600; color:#1e293b;">${String(val ?? '—')}</td>
+            </tr>
+          `).join('')}
+        </tbody>
       </table>
     `;
   } else {
-    changesTableHtml = `<p style="font-size:13px; color:#4a5568;">Record details updated for <strong>${oppName}</strong>.</p>`;
+    changesTableHtml = `<p style="font-size:13px; color:#4a5568;">The dataset or record <strong>${oppName}</strong> was ${action.toLowerCase()}.</p>`;
   }
 
   return `
@@ -148,40 +173,41 @@ function buildChangeEmailHtml(recordName, recordData, changes, action = 'Updated
       <meta charset="utf-8">
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #2d3748; }
-        .card { max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); border: 1px solid #e2e8f0; }
-        .header { background: #002b49; padding: 24px; color: #ffffff; text-align: left; }
+        .card { max-width: 650px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); border: 1px solid #e2e8f0; }
+        .header { background: #0f172a; padding: 24px; color: #ffffff; text-align: left; }
         .header h2 { margin: 0 0 6px 0; font-size: 20px; font-weight: 700; color: #38bdf8; }
-        .header p { margin: 0; font-size: 13px; color: #cbd5e0; }
+        .header p { margin: 0; font-size: 13px; color: #94a3b8; }
         .content { padding: 24px; }
-        .change-badge { display: inline-block; background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 4px; margin-bottom: 16px; }
-        .info-grid { width: 100%; border-collapse: collapse; margin-top: 12px; }
-        .info-grid td { padding: 10px 12px; border-bottom: 1px solid #edf2f7; font-size: 13px; }
-        .info-grid td.label { font-weight: 600; color: #4a5568; background: #f7fafc; }
-        .footer { background: #f7fafc; padding: 16px 24px; font-size: 11px; color: #718096; text-align: center; border-top: 1px solid #edf2f7; }
+        .change-badge { display: inline-block; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 4px; margin-bottom: 16px; }
+        .info-grid { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+        .info-grid td, .info-grid th { border: 1px solid #e2e8f0; }
+        .info-grid td.label { font-weight: 600; color: #334155; background: #f8fafc; padding: 8px 12px; }
+        .footer { background: #f8fafc; padding: 16px 24px; font-size: 11px; color: #64748b; text-align: center; border-top: 1px solid #e2e8f0; }
       </style>
     </head>
     <body>
       <div class="card">
         <div class="header">
-          <h2>📝 Opportunity ${action} Alert</h2>
-          <p>Mobileum Renewal Management System</p>
+          <h2>📝 Data Change Alert: ${action}</h2>
+          <p>Mobileum Database & Renewal Management System</p>
         </div>
         <div class="content">
-          <div class="change-badge">⚡ Record ${action}</div>
-          <p style="font-size:14px; margin-top:0;">
-            The opportunity record <strong>${oppName}</strong> (Account: ${accountName}) was successfully <strong>${action.toLowerCase()}</strong>.
+          <div class="change-badge">⚡ Action: ${action}</div>
+          <p style="font-size:14px; margin-top:0; color:#1e293b;">
+            A data modification occurred on record <strong>${oppName}</strong> (Account: ${accountName}).
           </p>
 
           ${changesTableHtml}
 
-          <div style="margin-top:20px; padding:12px; background:#f7fafc; border-radius:6px; font-size:12px; color:#4a5568;">
-            <strong>Opportunity Owner:</strong> ${owner} &nbsp;|&nbsp; 
-            <strong>Customer Remind Date:</strong> ${remindDate}
+          <div style="margin-top:20px; padding:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; font-size:12px; color:#475569;">
+            <strong>Record:</strong> ${oppName} &nbsp;|&nbsp; 
+            <strong>Owner:</strong> ${owner} &nbsp;|&nbsp; 
+            <strong>Timestamp:</strong> ${timestamp}
           </div>
         </div>
         <div class="footer">
           Automated change alert sent to <strong>${PRIMARY_OWNER_EMAIL}</strong> & <strong>${GLOBAL_OWNER_EMAIL}</strong><br>
-          Mobileum Renewal Management Portal &copy; 2026
+          Mobileum Portal &copy; 2026
         </div>
       </div>
     </body>
